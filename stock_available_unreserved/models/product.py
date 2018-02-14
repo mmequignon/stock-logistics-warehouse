@@ -39,18 +39,18 @@ class ProductTemplate(models.Model):
     @api.multi
     def action_open_quants_unreserved(self):
         products = self.mapped('product_variant_ids').ids
-        quants = self.env['stock.quant'].search(
-            [
-                ('product_id', 'in', products),
-            ]
-        )
+        quants = self.env['stock.quant'].search([
+            ('product_id', 'in', products),
+        ])
         quant_ids = quants.filtered(
             lambda x: x.product_id.qty_available_not_res > 0
         ).ids
         result = self.env.ref('stock.product_open_quants').read()[0]
-        result['domain'] = "[('id', 'in', {})]".format(quant_ids)
-        result['context'] = "{'search_default_locationgroup': 1, " \
-                            "'search_default_internal_loc': 1}"
+        result['domain'] = [('id', 'in', quant_ids)]
+        result['context'] = {
+            'search_default_locationgroup': 1,
+            'search_default_internal_loc': 1,
+        }
         return result
 
 
@@ -104,6 +104,7 @@ class ProductProduct(models.Model):
             vals['qty_available_not_res'] = quantity
             vals['qty_available_stock_text'] = str(quantity) + _(" On Hand")
             res[prod.id] = vals
+        self._product_available_not_res_hook(quants)
 
         return res
 
