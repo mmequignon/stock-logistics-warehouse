@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2016 OdooMRP Team
 # Copyright 2016 AvanzOSC
 # Copyright 2016 Pedro M. Baeza <pedro.baeza@tecnativa.com>
@@ -8,7 +7,7 @@
 
 {
     "name": "Stock Warehouse Orderpoint Stock Info",
-    "version": "10.0.1.0.0",
+    "version": "11.0.1.0.0",
     "depends": [
         "stock",
     ],
@@ -16,12 +15,10 @@
               "AvanzOSC, "
               "Tecnativa, "
               "Odoo Community Association (OCA)",
-    "website": "http://www.odoomrp.com",
+    "website": "https://github.com/OCA/stock-logistics-warehouse",
     "category": "Warehouse",
     "license": "AGPL-3",
     "data": [
         "views/stock_warehouse_orderpoint_view.xml",
     ],
-    "installable": True,
-    "application": False,
 }

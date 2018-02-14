@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2016 OdooMRP Team
 # Copyright 2016 AvanzOSC
 # Copyright 2016 Pedro M. Baeza <pedro.baeza@tecnativa.com>
