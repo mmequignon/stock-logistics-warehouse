@@ -1,3 +1,7 @@
 # list the OCA project dependencies, one per line
 # add a github url if you need a forked version
 purchase-workflow
+# include https://github.com/OCA/web/pull/871
+# MIG web_widget_x2many_2d_matrix
+web https://github.com/simahawk/web 11-mig-web_widget_x2many_2d_matrix
+server-ux
