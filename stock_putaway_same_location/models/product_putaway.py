@@ -25,11 +25,15 @@ class ProductPutaway(models.Model):
     def putaway_apply(self, product):
         # TODO handle multiple warehouses
         if self.method == 'previous/empty':
-            most_recent_location = self.get_most_recent_location(product)
-            if most_recent_location:
-                return most_recent_location
-            return self.get_closest_empty_sublocation()
+            return self.get_previous_or_empty_location(product)
         return super().putaway_apply(product)
+
+    @api.model
+    def get_previous_or_empty_location(self, product):
+        most_recent_location = self.get_most_recent_location(product)
+        if most_recent_location:
+            return most_recent_location
+        return self.get_closest_empty_sublocation()
 
     @api.model
     def get_most_recent_location(self, product, root_location=False):
@@ -50,6 +54,10 @@ class ProductPutaway(models.Model):
             ('state', 'in', self.STOCK_MOVE_PENDING_STATES + ['done']),
             ('location_dest_id', 'child_of', root_location.id),
         ]
+        hooked_lot_id = self.env.context.get('lot_id')
+        if product.tracking == 'lot' and hooked_lot_id:
+            # Try to search for this particular lot
+            domain.append(('lot_id', '=', hooked_lot_id))
         if exclude_root:
             domain.append(('location_dest_id', '!=', root_location.id))
         last_known_move = self.env['stock.move.line'].search(
