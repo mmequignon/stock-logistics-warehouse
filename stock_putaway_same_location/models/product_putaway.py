@@ -89,8 +89,15 @@ class ProductPutaway(models.Model):
         for current_empty_location in empty_locations:
             # check if there are incoming moves to that location
             incoming_moves_pending = self.env['stock.move.line'].search([
+                '|',
+                '&',
+                # `move.line`-s of other moves
                 ('state', 'not in', stock_move_confirmed_states),
                 ('location_dest_id', '=', current_empty_location.id),
+                '&',
+                # respect `move.line`-s of the same `stock.move`
+                ('state', '=', 'waiting'),
+                ('move_id', '=', self.env.context.get('current_move_id')),
             ], limit=1)
             if not incoming_moves_pending:
                 return current_empty_location
