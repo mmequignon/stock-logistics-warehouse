@@ -74,6 +74,8 @@ class ProductPutaway(models.Model):
             ('quant_ids', '=', False),
             ('usage', '=', 'internal'),
             ('location_id', 'child_of', root_location.id),
+            # exclude locations having their own sublocations
+            ('child_ids', '=', False),
         ]
         if exclude_root:
             domain.append(('id', '!=', root_location.id))
