@@ -55,7 +55,7 @@ class StockMoveLocationWizard(models.TransientModel):
         })
 
     def _create_moves(self, picking):
-        return self.stock_move_location_line_ids.create_moves(picking)
+        return self.stock_move_location_line_ids.create_move_lines(picking)
 
     def action_move_location(self):
         picking = self._create_picking()

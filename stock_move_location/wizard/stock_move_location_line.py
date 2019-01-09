@@ -57,18 +57,23 @@ class StockMoveLocationWizardLine(models.TransientModel):
                     "Move quantity can not exceed max quantity or be negative"
                 ))
 
-    def create_moves(self, picking):
+    def create_move_lines(self, picking):
         for line in self:
-            self.env["stock.move.line"].create({
-                "product_id": line.product_id.id,
-                "lot_id": line.lot_id.id,
-                "location_id": line.origin_location_id.id,
-                "location_dest_id": line.destination_location_id.id,
-                "qty_done": line._get_available_quantity(),
-                "product_uom_id": line.product_uom_id.id,
-                "picking_id": picking.id,
-            })
+            self.env["stock.move.line"].create(
+                self._get_move_line_values(line, picking)
+            )
         return True
+
+    def _get_move_line_values(self, line, picking):
+        return {
+            "product_id": line.product_id.id,
+            "lot_id": line.lot_id.id,
+            "location_id": line.origin_location_id.id,
+            "location_dest_id": line.destination_location_id.id,
+            "qty_done": line._get_available_quantity(),
+            "product_uom_id": line.product_uom_id.id,
+            "picking_id": picking.id,
+        }
 
     def _get_available_quantity(self):
         """We check here if the actual amount changed in the stock.
