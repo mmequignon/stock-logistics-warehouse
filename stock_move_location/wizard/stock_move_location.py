@@ -43,11 +43,9 @@ class StockMoveLocationWizard(models.TransientModel):
             not all([x.origin_location_id, x.destination_location_id])
         )
         lines_to_update.update({
-            "origin_location_id": self.origin_location_id,
-            "destination_location_id": self.destination_location_id,
+            "origin_location_id": self.origin_location_id.id,
+            "destination_location_id": self.destination_location_id.id,
         })
-        # for an easier extension of this function
-        return lines_to_update
 
     def _clear_lines(self):
         origin = self.origin_location_id
