@@ -71,9 +71,9 @@ class StockMoveLocationWizardLine(models.TransientModel):
     @api.onchange('product_id', 'lot_id')
     def onchange_product_id(self):
         self.product_uom_id = self.product_id.uom_id
+        wiz = self.move_location_wizard_id
         search_args = [
-            ('location_id', '=',
-             self.move_location_wizard_id.origin_location_id.id),
+            ('location_id', '=', wiz.origin_location_id.id),
             ('product_id', '=', self.product_id.id),
         ]
         if self.lot_id:
@@ -83,6 +83,8 @@ class StockMoveLocationWizardLine(models.TransientModel):
         res = self.env['stock.quant'].read_group(search_args, ['quantity'], [])
         max_quantity = res[0]['quantity']
         self.max_quantity = max_quantity
+        self.origin_location_id = wiz.origin_location_id
+        self.destination_location_id = wiz.destination_location_id
 
     def create_move_lines(self, picking, move):
         for line in self:

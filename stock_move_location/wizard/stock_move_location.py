@@ -36,17 +36,6 @@ class StockMoveLocationWizard(models.TransientModel):
     def _onchange_locations(self):
         self._clear_lines()
 
-    @api.onchange("stock_move_location_line_ids")
-    def _onchange_stock_move_location_line_ids(self):
-        lines_to_update = self.stock_move_location_line_ids.filtered(
-            lambda x: x.custom is True and
-            not all([x.origin_location_id, x.destination_location_id])
-        )
-        lines_to_update.update({
-            "origin_location_id": self.origin_location_id.id,
-            "destination_location_id": self.destination_location_id.id,
-        })
-
     def _clear_lines(self):
         origin = self.origin_location_id
         destination = self.destination_location_id
@@ -179,11 +168,13 @@ class StockMoveLocationWizard(models.TransientModel):
 
     def add_lines(self):
         self.ensure_one()
+        line_model = self.env["wiz.stock.move.location.line"]
         if not self.stock_move_location_line_ids:
             for line_val in self._get_stock_move_location_lines_values():
                 if line_val.get('max_quantity') <= 0:
                     continue
-                self.env["wiz.stock.move.location.line"].create(line_val)
+                line = line_model.create(line_val)
+                line.onchange_product_id()
         return {
             "type": "ir.actions.do_nothing",
         }
