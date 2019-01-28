@@ -128,29 +128,27 @@ class StockMoveLocationWizard(models.TransientModel):
         })
         return action
 
-    def _get_group_quants_sql(self):
+    def _get_group_quants(self):
         location_id = self.origin_location_id.id
         company = self.env['res.company']._company_default_get(
             'stock.inventory',
         )
-        return """
-        SELECT product_id, lot_id, SUM(quantity)
-        FROM stock_quant
-        WHERE location_id = {location_id} AND company_id = {company_id}
-        GROUP BY product_id, lot_id
-        """.format(
-            location_id=location_id,
-            company_id=company.id,
-        )
+        # Using sql as search_group doesn't support aggregation functions
+        # leading to overhead in queries to DB
+        query = """
+            SELECT product_id, lot_id, SUM(quantity)
+            FROM stock_quant
+            WHERE location_id = %s
+            AND company_id = %s
+            GROUP BY product_id, lot_id
+        """
+        self.env.cr.execute(query, (location_id, company_id))
+        return self.env.cr.dictfetchall()
 
     def _get_stock_move_location_lines_values(self):
         product_obj = self.env['product.product']
-
-        # Using sql as search_group doesn't support aggregation functions
-        # leading to overhead in queries to DB
-        self.env.cr.execute(self._get_group_quants_sql())
         product_data = []
-        for group in self.env.cr.dictfetchall():
+        for group in self._get_group_quants():
             product = product_obj.browse(group.get("product_id")).exists()
             product_data.append({
                 'product_id': product.id,
