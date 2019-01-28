@@ -142,7 +142,7 @@ class StockMoveLocationWizard(models.TransientModel):
             AND company_id = %s
             GROUP BY product_id, lot_id
         """
-        self.env.cr.execute(query, (location_id, company_id))
+        self.env.cr.execute(query, (location_id, company.id))
         return self.env.cr.dictfetchall()
 
     def _get_stock_move_location_lines_values(self):

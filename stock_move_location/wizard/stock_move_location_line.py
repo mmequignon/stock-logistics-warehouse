@@ -53,12 +53,10 @@ class StockMoveLocationWizardLine(models.TransientModel):
     )
 
     @api.model
-    def _get_rounding(self):
-        return self.env.ref("product.decimal_product_uom").digits or 3
-
-    @api.model
     def _compare(self, qty1, qty2):
-        return float_compare(qty1, qty2, self._get_rounding())
+        return float_compare(
+            qty1, qty2,
+            precision_rounding=self.product_uom_id.rounding)
 
     @api.constrains("max_quantity", "move_quantity")
     def _constraint_max_move_quantity(self):
