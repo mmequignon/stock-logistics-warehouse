@@ -52,18 +52,20 @@ class StockMoveLocationWizardLine(models.TransientModel):
         default=True,
     )
 
-    @api.model
-    def _compare(self, qty1, qty2):
+    @staticmethod
+    def _compare(self, qty1, qty2, precision_rounding):
         return float_compare(
             qty1, qty2,
-            precision_rounding=self.product_uom_id.rounding)
+            precision_rounding=precision_rounding)
 
     @api.constrains("max_quantity", "move_quantity")
     def _constraint_max_move_quantity(self):
         for record in self:
+            rounding = record.product_uom_id.rounding
             move_qty_gt_max_qty = self._compare(
-                record.move_quantity, record.max_quantity) == 1
-            move_qty_lt_0 = self._compare(record.move_quantity, 0.0) == -1
+                record.move_quantity, record.max_quantity, rounding) == 1
+            move_qty_lt_0 = self._compare(
+                record.move_quantity, 0.0, rounding) == -1
             if (move_qty_gt_max_qty or move_qty_lt_0):
                 raise ValidationError(_(
                     "Move quantity can not exceed max quantity or be negative"
@@ -136,8 +138,9 @@ class StockMoveLocationWizardLine(models.TransientModel):
             # if it is immediate transfer and product doesn't exist in that
             # location -> make the transfer of 0.
             return 0
+        rounding = self.product_uom_id.rounding
         available_qty_lt_move_qty = self._compare(
-            available_qty, self.move_quantity) == -1
+            available_qty, self.move_quantity, rounding) == -1
         if available_qty_lt_move_qty:
             return available_qty
         return self.move_quantity
