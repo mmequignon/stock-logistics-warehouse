@@ -9,7 +9,9 @@
 
             <field name="usage" position="after">
                 <field name="kind" />
-                <field name="picking_zone_id" options="{'no_create': True, 'no_open': True}" />
+                <!--
+                <field name="picking_zone_id" options="{'no_create': True}" />
+                -->
             </field>
 
             <field name="posx" position="before">

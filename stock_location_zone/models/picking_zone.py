@@ -13,6 +13,8 @@ class PickingZone(models.Model):
     picking_type_ids = fields.One2many(
         'stock.picking.type', 'picking_zone_id',
         string='Picking Types')
+
+    # FIXME: move to location of kind area
     location_name_format = fields.Char(
         'Location Name Format',
         help="Format string that will compute the name of the location. "
