@@ -10,6 +10,13 @@
     'depends': [
         'stock_location_zone',
     ],
+    'demo': [
+        'demo/product_demo.xml',
+        'demo/stock_location_demo.xml',
+        'demo/stock_reserve_rule_demo.xml',
+        'demo/stock_inventory_demo.xml',
+        'demo/stock_picking_demo.xml',
+    ],
     'data': [
         'views/stock_reserve_rule_views.xml',
         'security/ir.model.access.csv',
