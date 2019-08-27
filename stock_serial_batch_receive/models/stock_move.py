@@ -9,15 +9,10 @@ class StockMove(models.Model):
 
     picking_type_create_lots = fields.Boolean(
         related='picking_id.picking_type_id.use_create_lots',
-        readonly=True
     )
-    first_code = fields.Char(
+    first_number = fields.Char(
         string='First code',
         help="First serial number to be generated for this stock move",
-    )
-    last_code = fields.Char(
-        string='Last code',
-        help="Last serial number to be generated for this stock move",
     )
 
     def open_generate_serials_wizard(self):

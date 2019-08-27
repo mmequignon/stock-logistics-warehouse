@@ -8,8 +8,7 @@
                 <group>
                     <field name="stock_move_id" />
                     <field name="qty_to_process"  />
-                    <field name="first_code" />
-                    <field name="last_code" />
+                    <field name="first_number" />
                 </group>
                 <footer>
                     <button name="generate_serials" type="object" string="Generate serials" class="oe_highlight"/>

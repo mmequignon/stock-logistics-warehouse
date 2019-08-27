@@ -43,8 +43,7 @@ class TestSerialBatchGenerator(SavepointCase):
     def test_01_genrate_batch_serials(self):
         # serials numbers successfully created
         self.wizard.qty_to_process = 5
-        self.wizard.first_code = 23
-        self.wizard.last_code = 27
+        self.wizard.first_number = 23
         self.wizard.generate_serials()
         serials = self.wizard.stock_move_id.mapped('move_line_ids.lot_name')
         exp_serials = ['23', '24', '25', '26', '27']
@@ -55,14 +54,9 @@ class TestSerialBatchGenerator(SavepointCase):
         with self.assertRaises(ValidationError):
             # can't set bigger amount than total qty in the move
             self.wizard.qty_to_process = 15
-        self.wizard.first_code = 56
-        with self.assertRaises(ValidationError):
-            # last code doesn't match to generated serial codes
-            self.wizard.last_code = 89
-            self.wizard.generate_serials()
+        self.wizard.first_number = 56
         self.wizard.qty_to_process = 5
-        self.wizard.first_code = 56
-        self.wizard.last_code = 60
+        self.wizard.first_number = 56
         self.wizard.generate_serials()
         with self.assertRaises(ValidationError):
             # serial numbers are aleready in a use
@@ -72,8 +66,7 @@ class TestSerialBatchGenerator(SavepointCase):
         # create serial numbers only where they needed
         self.move.move_line_ids[3].lot_name = '12345'
         self.wizard.qty_to_process = 4
-        self.wizard.first_code = 23
-        self.wizard.last_code = 26
+        self.wizard.first_number = 23
         self.wizard.generate_serials()
         serials = self.wizard.stock_move_id.mapped('move_line_ids.lot_name')
         exp_serials = ['23', '24', '25', '12345', '26']

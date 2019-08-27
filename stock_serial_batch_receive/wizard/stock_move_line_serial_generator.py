@@ -2,7 +2,7 @@
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl)
 
 from odoo import _, api, fields, models
-from odoo.exceptions import ValidationError
+from odoo.exceptions import ValidationError, UserError
 
 
 class StockMoveLineSerialGenerator(models.TransientModel):
@@ -12,17 +12,16 @@ class StockMoveLineSerialGenerator(models.TransientModel):
 
     stock_move_id = fields.Many2one('stock.move', readonly=True)
     product_id = fields.Many2one(
-        'product.product', related='stock_move_id.product_id', readonly=True
+        'product.product', related='stock_move_id.product_id'
     )
     picking_type_create_lots = fields.Boolean(
-        related='stock_move_id.picking_type_create_lots', readonly=True
+        related='stock_move_id.picking_type_create_lots'
     )
     qty_to_process = fields.Integer(
         help="Defines how many serial numbers will be generated on stock move "
         "lines without a serial number yet."
     )
-    first_code = fields.Char(related='stock_move_id.first_code', required=True)
-    last_code = fields.Char(related='stock_move_id.last_code')
+    first_number = fields.Char(required=True)
 
     @api.model
     def default_get(self, fields):
@@ -34,30 +33,37 @@ class StockMoveLineSerialGenerator(models.TransientModel):
                 lambda m: not m.lot_name
             )
             res['qty_to_process'] = len(lines_without_serial)
+        if 'first_number' in fields:
+            res['first_number'] = self._get_first_number()
         return res
+
+    def _get_first_number(self):
+        return self.stock_move_id.first_number
 
     @api.multi
     def _check_new_serials_usage(self, serials_list):
         """Check if a sequence generated number is already used on existing
         stock.production.lot or stock.move.line."""
         errors = []
-        for serial in serials_list:
-            lot = self.env['stock.production.lot'].search(
+        lots = self.env['stock.production.lot'].search(
                 [
                     ('product_id', '=', self.product_id.id),
-                    ('name', '=', serial),
+                    ('name', 'in', serials_list)
                 ]
             )
+        so_lines = self.env['stock.move.line'].search(
+                [
+                    ('product_id', '=', self.product_id.id),
+                    ('lot_name', 'in', serials_list)
+                ]
+            )
+        for serial in serials_list:
+            lot = lots.filtered(lambda l: l.name == serial )
             if self.picking_type_create_lots:
                 if lot:
                     errors.append(serial)
                     continue
-                line = self.env['stock.move.line'].search(
-                    [
-                        ('product_id', '=', self.product_id.id),
-                        ('lot_name', '=', serial),
-                    ]
-                )
+                line = so_lines.filtered(lambda l: l.lot_name == serial)
                 if line:
                     errors.append(serial)
             else:
@@ -74,18 +80,7 @@ class StockMoveLineSerialGenerator(models.TransientModel):
                 _("The following serial numbers don't exist:\n%s")
                 % '\n'.join(errors)
             )
-        else:
-            return True
-
-    def _check_serials_range(self, new_serials):
-        if self.last_code:
-            if new_serials[-1] != self.last_code:
-                raise ValidationError(
-                    _(
-                        "Last serial number doesn't belonging to "
-                        "the given range"
-                    )
-                )
+        return True
 
     @api.constrains('qty_to_process')
     def _check_qty_to_process(self):
@@ -111,8 +106,7 @@ class StockMoveLineSerialGenerator(models.TransientModel):
         move_lines = self.stock_move_id.move_line_ids.filtered(
             lambda l: not l.lot_name and not l.lot_id
         )
-        sequence = self.get_sequence()
-        new_serials = [sequence._next() for i in range(self.qty_to_process)]
+        new_serials = self._get_new_serials()
         self._check_serials_range(new_serials)
         self._check_new_serials_usage(new_serials)
         if self.picking_type_create_lots:
@@ -121,12 +115,13 @@ class StockMoveLineSerialGenerator(models.TransientModel):
             self._fill_with_existing_serials(move_lines, new_serials)
         return self.stock_move_id.action_show_details()
 
-    def get_sequence(self):
-        # if needed we can return simple 'ir.sequence' and return
-        # sequence depending on product
-        return self.env['ir.sequence.wizard'].create(
-            {'number_next_actual': self.first_code}
-        )
+    def _get_new_serials(self):
+        # if needed 'ir.sequence' can be used
+        # we expect only simple number
+        if not self.first_number.isdigit():
+            raise ValidationError('Only numbers are expectable')
+        number = int(self.first_number)
+        return [i for i in range(number, self.qty_received + number)]
 
     def _fill_with_new_serials(self, move_lines, new_serials):
         for i in range(self.qty_to_process):
@@ -141,7 +136,11 @@ class StockMoveLineSerialGenerator(models.TransientModel):
                 ('name', 'in', new_serials),
             ]
         )
-        assert len(serials) == self.qty_to_process
+        if len(serials) == self.qty_to_process:
+            raise UserError(
+                'Quantity to process are not equal to amount of '
+                'generated serial numbers'
+            )
         for i in range(self.qty_to_process):
             move_line = move_lines[i]
             move_line.update({'lot_id': serials[i]})
