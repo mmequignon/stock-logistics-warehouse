@@ -8,7 +8,7 @@ from odoo.exceptions import ValidationError, UserError
 class StockMoveLineSerialGenerator(models.TransientModel):
 
     _name = 'stock.move.line.serial.generator'
-    _description = 'Auto generate serial numbers according to product sequence'
+    _description = 'Auto generate serial numbers'
 
     stock_move_id = fields.Many2one('stock.move', readonly=True)
     product_id = fields.Many2one(
