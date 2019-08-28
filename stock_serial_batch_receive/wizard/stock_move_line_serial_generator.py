@@ -21,7 +21,7 @@ class StockMoveLineSerialGenerator(models.TransientModel):
         help="Defines how many serial numbers will be generated on stock move "
         "lines without a serial number yet."
     )
-    first_number = fields.Char(copy=False)
+    first_number = fields.Char()
 
     @api.model
     def default_get(self, fields):
