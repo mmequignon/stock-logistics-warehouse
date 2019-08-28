@@ -134,7 +134,7 @@ class StockMoveLineSerialGenerator(models.TransientModel):
         if len(serials) == self.qty_to_process:
             raise UserError(
                 _(
-                    'Quantity to process are not equal to amount of '
+                    'Quantity to process is not equal to quantity of '
                     'generated serial numbers'
                 )
             )
