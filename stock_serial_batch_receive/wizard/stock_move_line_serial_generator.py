@@ -45,20 +45,16 @@ class StockMoveLineSerialGenerator(models.TransientModel):
         """Check if a sequence generated number is already used on existing
         stock.production.lot or stock.move.line."""
         errors = []
-        lots = self.env['stock.production.lot'].search(
-                [
-                    ('product_id', '=', self.product_id.id),
-                    ('name', 'in', serials_list)
-                ]
-            )
-        so_lines = self.env['stock.move.line'].search(
-                [
-                    ('product_id', '=', self.product_id.id),
-                    ('lot_name', 'in', serials_list)
-                ]
-            )
+        lots = self.env['stock.production.lot'].search([
+            ('product_id', '=', self.product_id.id),
+            ('name', 'in', serials_list)
+        ])
+        so_lines = self.env['stock.move.line'].search([
+            ('product_id', '=', self.product_id.id),
+            ('lot_name', 'in', serials_list)
+        ])
         for serial in serials_list:
-            lot = lots.filtered(lambda l: l.name == serial )
+            lot = lots.filtered(lambda l: l.name == serial)
             if self.picking_type_create_lots:
                 if lot:
                     errors.append(serial)
@@ -117,9 +113,9 @@ class StockMoveLineSerialGenerator(models.TransientModel):
 
     def _get_new_serials(self):
         # if needed 'ir.sequence' can be used
-        # we expect only simple number
+        # we expect only the simple number
         if not self.first_number.isdigit():
-            raise ValidationError('Only numbers are expectable')
+            raise ValidationError(_('Only numbers are expectable'))
         number = int(self.first_number)
         return [i for i in range(number, self.qty_received + number)]
 
@@ -130,16 +126,16 @@ class StockMoveLineSerialGenerator(models.TransientModel):
             move_line.onchange_serial_number()
 
     def _fill_with_existing_serials(self, move_lines, new_serials):
-        serials = self.env['stock.production.lot'].search(
-            [
-                ('product_id', '=', self.product_id.id),
-                ('name', 'in', new_serials),
-            ]
-        )
+        serials = self.env['stock.production.lot'].search([
+            ('product_id', '=', self.product_id.id),
+            ('name', 'in', new_serials),
+        ])
         if len(serials) == self.qty_to_process:
             raise UserError(
-                'Quantity to process are not equal to amount of '
-                'generated serial numbers'
+                _(
+                    'Quantity to process are not equal to amount of '
+                    'generated serial numbers'
+                )
             )
         for i in range(self.qty_to_process):
             move_line = move_lines[i]
