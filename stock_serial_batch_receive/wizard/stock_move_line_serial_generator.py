@@ -21,7 +21,7 @@ class StockMoveLineSerialGenerator(models.TransientModel):
         help="Defines how many serial numbers will be generated on stock move "
         "lines without a serial number yet."
     )
-    first_number = fields.Char()
+    first_number = fields.Char(required=True)
 
     @api.model
     def default_get(self, fields):
@@ -34,13 +34,8 @@ class StockMoveLineSerialGenerator(models.TransientModel):
             )
             res['qty_to_process'] = len(lines_without_serial)
         if 'first_number' in fields:
-            res['first_number'] = self._get_first_number(move)
+            res['first_number'] = move._get_first_number()
         return res
-
-    def _get_first_number(self, move):
-        """In move we had all info if needed we can initialize
-         it depending on product"""
-        return move.first_number
 
     @api.multi
     def _check_new_serials_usage(self, serials_list):
@@ -51,27 +46,23 @@ class StockMoveLineSerialGenerator(models.TransientModel):
             ('product_id', '=', self.product_id.id),
             ('name', 'in', serials_list)
         ])
-        so_lines = self.env['stock.move.line'].search([
+        sm_lines = self.env['stock.move.line'].search([
             ('product_id', '=', self.product_id.id),
             ('lot_name', 'in', serials_list)
         ])
-        for serial in serials_list:
-            lot = lots.filtered(lambda l: l.name == serial)
-            if self.picking_type_create_lots:
-                if lot:
-                    errors.append(serial)
-                    continue
-                line = so_lines.filtered(lambda l: l.lot_name == serial)
-                if line:
-                    errors.append(serial)
-            else:
-                if not lot:
-                    errors.append(serial)
+        if self.picking_type_create_lots:
+            if lots:
+                errors.append(lots.mapped('name'))
+            if sm_lines:
+                errors.append(sm_lines.mapped('lot_name'))
+        else:
+            if not lots:
+                errors.append(serials_list)
 
         if errors and self.picking_type_create_lots:
             raise ValidationError(
                 _('The following serial numbers are already in use:\n%s')
-                % '\n'.join(errors)
+                % '\n'.join(set(errors))
             )
         elif errors:
             raise ValidationError(

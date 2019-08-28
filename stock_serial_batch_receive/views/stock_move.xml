@@ -9,7 +9,6 @@
                 <group>
                     <field name="has_tracking" invisible="1" />
                     <field name="picking_type_create_lots" invisible="1" />
-                    <field name="first_number" />
                 </group>
             </xpath>
 
