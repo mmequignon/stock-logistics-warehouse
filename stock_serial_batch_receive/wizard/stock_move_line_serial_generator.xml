@@ -6,7 +6,7 @@
         <field name="arch" type="xml">
             <form>
                 <group>
-                    <field name="stock_move_id" />
+                    <field name="stock_move_id" invisible="1"/>
                     <field name="qty_to_process"  />
                     <field name="first_number" />
                 </group>

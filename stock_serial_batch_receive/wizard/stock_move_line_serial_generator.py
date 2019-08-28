@@ -21,7 +21,7 @@ class StockMoveLineSerialGenerator(models.TransientModel):
         help="Defines how many serial numbers will be generated on stock move "
         "lines without a serial number yet."
     )
-    first_number = fields.Char(required=True)
+    first_number = fields.Char(copy=False)
 
     @api.model
     def default_get(self, fields):
@@ -34,11 +34,13 @@ class StockMoveLineSerialGenerator(models.TransientModel):
             )
             res['qty_to_process'] = len(lines_without_serial)
         if 'first_number' in fields:
-            res['first_number'] = self._get_first_number()
+            res['first_number'] = self._get_first_number(move)
         return res
 
-    def _get_first_number(self):
-        return self.stock_move_id.first_number
+    def _get_first_number(self, move):
+        """In move we had all info if needed we can initialize
+         it depending on product"""
+        return move.first_number
 
     @api.multi
     def _check_new_serials_usage(self, serials_list):
@@ -103,7 +105,6 @@ class StockMoveLineSerialGenerator(models.TransientModel):
             lambda l: not l.lot_name and not l.lot_id
         )
         new_serials = self._get_new_serials()
-        self._check_serials_range(new_serials)
         self._check_new_serials_usage(new_serials)
         if self.picking_type_create_lots:
             self._fill_with_new_serials(move_lines, new_serials)
@@ -112,12 +113,12 @@ class StockMoveLineSerialGenerator(models.TransientModel):
         return self.stock_move_id.action_show_details()
 
     def _get_new_serials(self):
-        # if needed 'ir.sequence' can be used
-        # we expect only the simple number
+        """If needed 'ir.sequence' can be used
+         we expect only the simple number"""
         if not self.first_number.isdigit():
             raise ValidationError(_('Only numbers are expectable'))
         number = int(self.first_number)
-        return [i for i in range(number, self.qty_received + number)]
+        return [i for i in range(number, self.qty_to_process + number)]
 
     def _fill_with_new_serials(self, move_lines, new_serials):
         for i in range(self.qty_to_process):
