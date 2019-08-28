@@ -116,7 +116,7 @@ class StockMoveLineSerialGenerator(models.TransientModel):
         """If needed 'ir.sequence' can be used
          we expect only the simple number"""
         if not self.first_number.isdigit():
-            raise ValidationError(_('Only numbers are expectable'))
+            raise ValidationError(_('Only numbers are allowed'))
         number = int(self.first_number)
         return [i for i in range(number, self.qty_to_process + number)]
 
