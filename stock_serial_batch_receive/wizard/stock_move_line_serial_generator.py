@@ -44,7 +44,7 @@ class StockMoveLineSerialGenerator(models.TransientModel):
 
     @api.multi
     def _check_new_serials_usage(self, serials_list):
-        """Check if a sequence generated number is already used on existing
+        """Check if a generated number is already used on existing
         stock.production.lot or stock.move.line."""
         errors = []
         lots = self.env['stock.production.lot'].search([
