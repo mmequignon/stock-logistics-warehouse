@@ -75,26 +75,32 @@ class TestVirtualReservation(common.SavepointCase):
 
     def test_reservation(self):
         picking = self._create_picking(
-            self.wh, [(self.product1, 5)], date=datetime(2019, 9, 2, 16)
+            self.wh, [(self.product1, 5)], date=datetime(2019, 9, 2, 16, 0)
         )
         picking2 = self._create_picking(
-            self.wh, [(self.product1, 3)], date=datetime(2019, 9, 2, 16)
+            self.wh, [(self.product1, 3)], date=datetime(2019, 9, 2, 16, 1)
         )
         # we'll assign this one in the test, should deduct pick 1 and 2
         picking3 = self._create_picking(
-            self.wh, [(self.product1, 20)], date=datetime(2019, 9, 3, 16)
+            self.wh, [(self.product1, 20)], date=datetime(2019, 9, 3, 16, 0)
         )
         # this one should be ignored when we'll assign pick 3 as it has
         # a later date
         picking4 = self._create_picking(
-            self.wh, [(self.product1, 20)], date=datetime(2019, 9, 4, 16)
+            self.wh, [(self.product1, 20)], date=datetime(2019, 9, 4, 16, 1)
         )
 
         for pick in (picking, picking2, picking3, picking4):
+            # self.assertEqual(pick.move_lines.virtual_reserved_qty, 0)
             self.assertEqual(pick.state, "confirmed")
             self.assertEqual(pick.move_lines.reserved_availability, 0.)
 
         self._update_qty_in_location(self.loc_bin1, self.product1, 20.)
+
+        self.assertEqual(picking.move_lines.virtual_reserved_qty, 5)
+        self.assertEqual(picking2.move_lines.virtual_reserved_qty, 3)
+        self.assertEqual(picking3.move_lines.virtual_reserved_qty, 12)
+        self.assertEqual(picking4.move_lines.virtual_reserved_qty, 0)
 
         picking3.action_assign()
         self.assertEqual(picking.move_lines.reserved_availability, 0.)
