@@ -11,6 +11,14 @@ class StockMove(models.Model):
                                   location_id, lot_id=None, package_id=None,
                                   owner_id=None, strict=True):
         """Create or update move lines."""
+        if strict:
+            # chained moves must take what was reserved by the previous move
+            return super()._update_reserved_quantity(
+                need, available_quantity,
+                location_id=location_id, lot_id=lot_id,
+                package_id=package_id, owner_id=owner_id,
+                strict=strict
+            )
         rules = self.env['stock.reserve.rule']._rules_for_location(location_id)
         # TODO normal behavior if no rules found?
         still_need = need
