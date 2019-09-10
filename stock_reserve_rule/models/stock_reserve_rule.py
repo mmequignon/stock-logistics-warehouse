@@ -27,11 +27,7 @@ class StockReserveRule(models.Model):
     name = fields.Char(string="Description")
     display_name = fields.Char(compute="_compute_display_name", store=True)
     sequence = fields.Integer(default=0)
-    location_id = fields.Many2one(
-        comodel_name="stock.location",
-        # TODO remove this? could be used without using zones...
-        domain=[("kind", "=", "zone")],
-    )
+    location_id = fields.Many2one(comodel_name="stock.location")
     # TODO ACL + default value
     company_id = fields.Many2one(comodel_name="res.company")
     active = fields.Boolean(default=True)

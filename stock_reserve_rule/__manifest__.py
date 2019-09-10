@@ -8,7 +8,7 @@
     'website': "https://github.com/OCA/stock-logistics-warehouse",
     'category': 'Stock Management',
     'depends': [
-        'stock_location_zone',
+        'stock',
     ],
     'demo': [
         'demo/product_demo.xml',
