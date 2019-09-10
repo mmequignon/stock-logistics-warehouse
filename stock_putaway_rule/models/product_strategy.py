@@ -8,7 +8,6 @@ class StockPutawayRule(models.Model):
     _name = 'stock.putaway.rule'
     _order = 'sequence,product_id'
     _description = 'Putaway Rule'
-    _check_company_auto = True
 
     def _default_category_id(self):
         if self.env.context.get('active_model') == 'product.category':
@@ -43,22 +42,22 @@ class StockPutawayRule(models.Model):
         return domain
 
     product_id = fields.Many2one(
-        'product.product', 'Product', check_company=True,
+        'product.product', 'Product',
         default=_default_product_id, domain=_domain_product_id, ondelete='cascade')
     category_id = fields.Many2one('product.category', 'Product Category',
         default=_default_category_id, domain=_domain_category_id, ondelete='cascade')
     location_in_id = fields.Many2one(
-        'stock.location', 'When product arrives in', check_company=True,
+        'stock.location', 'When product arrives in',
         domain="[('child_ids', '!=', False), '|', ('company_id', '=', False), ('company_id', '=', company_id)]",
         default=_default_location_id, required=True, ondelete='cascade')
     location_out_id = fields.Many2one(
-        'stock.location', 'Store to', check_company=True,
+        'stock.location', 'Store to',
         domain="[('id', 'child_of', location_in_id), ('id', '!=', location_in_id), '|', ('company_id', '=', False), ('company_id', '=', company_id)]",
         required=True, ondelete='cascade')
     sequence = fields.Integer('Priority', help="Give to the more specialized category, a higher priority to have them in top of the list.")
     company_id = fields.Many2one(
         'res.company', 'Company', required=True,
-        default=lambda s: s.env.company.id, index=True)
+        default=lambda s: s.env.user.company_id, index=True)
 
     @api.onchange('location_in_id')
     def _onchange_location_in(self):
