@@ -1,41 +1,31 @@
 # Copyright 2019 Camptocamp SA
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
-from itertools import groupby
-
-from odoo import api, models
-from odoo.tools.float_utils import float_compare
-
-import logging
-
-_logger = logging.getLogger(__name__)
+from odoo import models
 
 
 class StockQuant(models.Model):
     _inherit = "stock.quant"
 
-    @api.model
-    def _gather_by_location(
-        self,
-        product_id,
-        location_id,
-        lot_id=None,
-        package_id=None,
-        owner_id=None,
-        strict=False,
-    ):
-        quants = self.env["stock.quant"]._gather(
-            product_id,
-            location_id,
-            lot_id=lot_id,
-            package_id=package_id,
-            owner_id=owner_id,
-            strict=strict,
-        )
-        # TODO take care of product's tracking type...
-        by_location = {}
-        for quant in quants:
-            by_location.setdefault(quant.location_id, self.browse())
-            by_location[quant.location_id] |= quant
+    def _group_by_location(self):
+        """Return quants grouped by locations
 
-        return by_location
+        Group by location, but keeping the order of the quants (if we have more
+        than one quant per location, the order is based on the first quant seen
+        in the location). Thus, it can be used on a recordset returned by
+        _gather.
+
+        The returned format is: [(location, quants)]
+
+        """
+        quants_per_location = []
+        seen = {}
+        for quant in self:
+            location = quant.location_id
+            if location in seen:
+                index = seen[location]
+                quants_per_location[index][1] += quant
+            else:
+                quants_per_location.append((location, quant))
+                seen[location] = len(quants_per_location) - 1
+        return quants_per_location

@@ -132,6 +132,17 @@ class TestReserveRule(common.SavepointCase):
         for values in rule_values:
             self.env["stock.reserve.rule"].create(values)
 
+    def _setup_packagings(self, product, packagings):
+        """Create packagings on a product
+        packagings is a list [(name, qty)]
+        """
+        self.env["product.packaging"].create(
+            [
+                {"name": name, "qty": qty, "product_id": product.id}
+                for name, qty in packagings
+            ]
+        )
+
     def test_rule_take_all_in_2(self):
         all_locs = (
             self.loc_zone1_bin1,
@@ -251,7 +262,7 @@ class TestReserveRule(common.SavepointCase):
         )
         self.assertEqual(move.state, "assigned")
 
-    def test_rule_only_full_quantity(self):
+    def test_rule_empty_bin(self):
         self._update_qty_in_location(self.loc_zone1_bin1, self.product1, 300)
         self._update_qty_in_location(self.loc_zone1_bin2, self.product1, 150)
         self._update_qty_in_location(self.loc_zone2_bin1, self.product1, 50)
@@ -265,13 +276,13 @@ class TestReserveRule(common.SavepointCase):
                 {
                     "location_id": self.loc_zone1.id,
                     "sequence": 1,
-                    "only_full_quantity": True,
+                    "removal_strategy": "empty_bin",
                 },
                 # this rule should be applied because we will empty the bin
                 {
                     "location_id": self.loc_zone2.id,
                     "sequence": 2,
-                    "only_full_quantity": True,
+                    "removal_strategy": "empty_bin",
                 },
                 {"location_id": self.loc_zone3.id, "sequence": 3},
             ]
@@ -289,3 +300,121 @@ class TestReserveRule(common.SavepointCase):
             ],
         )
         self.assertEqual(move.state, "assigned")
+
+    def test_rule_empty_bin_partial(self):
+        self._update_qty_in_location(self.loc_zone1_bin1, self.product1, 50)
+        self._update_qty_in_location(self.loc_zone1_bin2, self.product1, 50)
+        self._update_qty_in_location(self.loc_zone2_bin1, self.product1, 50)
+        picking = self._create_picking(self.wh, [(self.product1, 80)])
+
+        self._create_rules(
+            [
+                {
+                    "location_id": self.loc_zone1.id,
+                    "sequence": 1,
+                    "removal_strategy": "empty_bin",
+                },
+                {
+                    "location_id": self.loc_zone2.id,
+                    "sequence": 2,
+                },
+            ]
+        )
+        picking.action_assign()
+        move = picking.move_lines
+        ml = move.move_line_ids
+
+        # We expect to take 50 in zone1/bin1 as it will empty a bin,
+        # but zone1/bin2 must not be used as it would not empty it.
+
+        self.assertRecordValues(
+            ml,
+            [
+                {"location_id": self.loc_zone1_bin1.id, "product_qty": 50.},
+                {"location_id": self.loc_zone2_bin1.id, "product_qty": 30.},
+            ],
+        )
+        self.assertEqual(move.state, "assigned")
+
+    def test_rule_empty_bin_smallest_first(self):
+        self._update_qty_in_location(self.loc_zone1_bin1, self.product1, 60)
+        self._update_qty_in_location(self.loc_zone1_bin2, self.product1, 30)
+        self._update_qty_in_location(self.loc_zone2_bin1, self.product1, 50)
+        picking = self._create_picking(self.wh, [(self.product1, 80)])
+
+        self._create_rules(
+            [
+                {
+                    "location_id": self.loc_zone1.id,
+                    "sequence": 1,
+                    "removal_strategy": "empty_bin",
+                },
+                {
+                    "location_id": self.loc_zone2.id,
+                    "sequence": 2,
+                },
+            ]
+        )
+        picking.action_assign()
+        move = picking.move_lines
+        ml = move.move_line_ids
+
+        # We expect to take 30 in zone1/bin2 as it will empty a bin,
+        # and we prefer to take in the most empty bins first.
+        # Then we cannot take in zone1/bin1 as it would not be empty.
+
+        self.assertRecordValues(
+            ml,
+            [
+                {"location_id": self.loc_zone1_bin2.id, "product_qty": 30.},
+                {"location_id": self.loc_zone2_bin1.id, "product_qty": 50.},
+            ],
+        )
+        self.assertEqual(move.state, "assigned")
+
+    # def test_rule_full_packaging(self):
+    #     self._setup_packagings(
+    #         self.product1, [("Pallet", 500), ("Outer Box", 50)]
+    #     )
+    #     self._update_qty_in_location(self.loc_zone1_bin1, self.product1, 40)
+    #     self._update_qty_in_location(self.loc_zone1_bin2, self.product1, 500)
+    #     self._update_qty_in_location(self.loc_zone2_bin1, self.product1, 50)
+    #     self._update_qty_in_location(self.loc_zone3_bin1, self.product1, 100)
+    #     picking = self._create_picking(self.wh, [(self.product1, 100)])
+
+    #     self._create_rules(
+    #         [
+    #             # due to this rule and the packaging size of 500, we will
+    #             # not use zone1/bin1, but zone1/bin2 will be used.
+    #             {
+    #                 "location_id": self.loc_zone1.id,
+    #                 "sequence": 1,
+    #                 "full_packaging": True,
+    #             },
+    #             # zone2/bin2 will match the second packaging size of 50
+    #             {
+    #                 "location_id": self.loc_zone2.id,
+    #                 "sequence": 2,
+    #                 "full_packaging": True,
+    #             },
+    #             # the rest should be taken here
+    #             {"location_id": self.loc_zone3.id, "sequence": 3},
+    #         ]
+    #     )
+    #     picking.action_assign()
+    #     move = picking.move_lines
+    #     ml = move.move_line_ids
+
+    #     import pdb
+
+    #     pdb.set_trace()
+
+    #     self.assertRecordValues(
+    #         ml,
+    #         [
+    #             {"location_id": self.loc_zone1_bin2.id, "product_qty": 500.},
+    #             {"location_id": self.loc_zone2_bin1.id, "product_qty": 50.},
+    #             {"location_id": self.loc_zone3_bin1.id, "product_qty": 40.},
+    #         ],
+    #     )
+    #     self.assertEqual(move.state, "assigned")

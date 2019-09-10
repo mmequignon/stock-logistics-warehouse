@@ -30,14 +30,27 @@ class StockMove(models.Model):
                 strict=strict,
             )
         rules = self.env["stock.reserve.rule"]._rules_for_location(location_id)
-        # TODO normal behavior if no rules found?
+        if not rules:
+            return super()._update_reserved_quantity(
+                need,
+                available_quantity,
+                location_id=location_id,
+                lot_id=lot_id,
+                package_id=package_id,
+                owner_id=owner_id,
+                strict=strict,
+            )
+
         still_need = need
+
         forced_package_id = self.package_level_id.package_id or None
-        # get_available = self.env["stock.quant"]._get_available_quantity
         rounding = self.product_id.uom_id.rounding
         for rule in rules:
-            # TODO lot, ... (see Quant._get_available_quantity)
-            quants_by_loc = self.env["stock.quant"]._gather_by_location(
+            # 1st check if rule is applicable from the move
+            if not rule._is_rule_applicable(self):
+                continue
+
+            quants = self.env["stock.quant"]._gather(
                 self.product_id,
                 rule.location_id,
                 lot_id=lot_id,
@@ -45,31 +58,46 @@ class StockMove(models.Model):
                 owner_id=owner_id,
                 strict=strict,
             )
-            match_locations = rule._rule_eval(self, still_need, quants_by_loc)
 
-            if not match_locations:
+            # get quants allowed by the rule
+            rule_quants = rule._filter_quants(self, quants)
+            if not rule_quants:
                 continue
-            for location, location_quantity in match_locations:
-                if location_quantity <= 0:
-                    continue
 
-                taken_in_loc = super()._update_reserved_quantity(
-                    still_need,
-                    location_quantity,
-                    location_id=location,
-                    lot_id=lot_id,
-                    package_id=package_id,
-                    owner_id=owner_id,
-                    strict=strict,
-                )
-                still_need -= taken_in_loc
-                need_zero = (
-                    float_compare(still_need, 0, precision_rounding=rounding)
-                    != 1
-                )
-                if need_zero:
-                    # useless to eval the other rules when still_need <= 0
+            # Apply the advanced removal strategy, if any. Even within the
+            # application of the removal strategy, the original company's one
+            # should be respected (eg. if we remove quants that would empty
+            # bins first, in case of equality, we should remove the fifo or
+            # fefo first depending of the configuration).
+            strategy = rule._apply_strategy(rule_quants)
+            next(strategy)
+            while True:
+                try:
+                    next_quant = strategy.send(still_need)
+                    if not next_quant:
+                        continue
+                    location, location_quantity, to_take = next_quant
+                    taken_in_loc = super()._update_reserved_quantity(
+                        # in this strategy, we take as much as we can
+                        # from this bin
+                        to_take,
+                        location_quantity,
+                        location_id=location,
+                        lot_id=lot_id,
+                        package_id=package_id,
+                        owner_id=owner_id,
+                        strict=strict,
+                    )
+                    still_need -= taken_in_loc
+                except StopIteration:
                     break
+
+            need_zero = (
+                float_compare(still_need, 0, precision_rounding=rounding) != 1
+            )
+            if need_zero:
+                # useless to eval the other rules when still_need <= 0
+                break
 
         # TODO call super with the rest and a location?
         return need - still_need

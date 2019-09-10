@@ -5,21 +5,21 @@
     <field name="name">Zone A - Full Quantity</field>
     <field name="sequence">1</field>
     <field name="location_id" ref="stock_location_zone_a_demo"/>
-    <field name="only_full_quantity" eval="True"/>
+    <field name="removal_strategy">empty_bin</field>
   </record>
 
   <record id="stock_reserve_rule_2_demo" model="stock.reserve.rule">
       <field name="name">Zone B</field>
       <field name="sequence">2</field>
       <field name="location_id" ref="stock_location_zone_b_demo"/>
-      <field name="only_full_quantity" eval="False"/>
+      <field name="removal_strategy">default</field>
   </record>
 
   <record id="stock_reserve_rule_3_demo" model="stock.reserve.rule">
       <field name="name">Zone C</field>
       <field name="sequence">3</field>
       <field name="location_id" ref="stock_location_zone_c_demo"/>
-      <field name="only_full_quantity" eval="False"/>
+      <field name="removal_strategy">default</field>
   </record>
 
 </odoo>

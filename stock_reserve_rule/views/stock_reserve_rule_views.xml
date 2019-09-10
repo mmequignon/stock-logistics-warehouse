@@ -14,12 +14,13 @@
         <label for="name" class="oe_edit_only"/>
         <h1><field name="name"/></h1>
         <group>
-          <group string="Configuration" name="configuration">
+          <group string="Rule Applicability" name="configuration">
               <field name="location_id"/>
+              <field name="rule_domain" widget="domain"  options="{'model': 'stock.move'}" />
           </group>
-          <group string="Conditions" name="conditions">
-            <field name="rule_domain" widget="domain"  options="{'model': 'stock.move'}" />
-            <field name="only_full_quantity"/>
+          <group string="Removal Rules" name="rule">
+            <field name="quant_domain" widget="domain"  options="{'model': 'stock.quant'}" />
+            <field name="removal_strategy"/>
           </group>
         </group>
       </form>
