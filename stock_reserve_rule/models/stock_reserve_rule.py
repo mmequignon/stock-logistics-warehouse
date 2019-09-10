@@ -27,7 +27,6 @@ class StockReserveRule(models.Model):
     name = fields.Char(string="Description")
     display_name = fields.Char(compute="_compute_display_name", store=True)
     sequence = fields.Integer(default=0)
-    # required if no child
     location_id = fields.Many2one(
         comodel_name="stock.location",
         # TODO remove this? could be used without using zones...
@@ -114,6 +113,27 @@ class StockReserveRule(models.Model):
         return quants
 
     def _apply_strategy(self, quants):
+        """Apply the advanced removal strategy
+
+        New methods can be added by:
+
+        - Adding a selection in the 'removal_strategy' field.
+        - adding a method named after the selection value
+          (_apply_strategy_SELECTION)
+
+        A strategy has to comply with this signature: (self, quants)
+        Where 'self' is the current rule and 'quants' are the candidate
+        quants allowed for the rule, sorted by the company's removal
+        strategy (fifo, fefo, ...).
+        It has to get the initial need using 'need = yield' once, then,
+        each time the strategy decides to take quantities in a location,
+        it has to yield and retrieve the remaining needed using:
+
+            need = yield location, location_quantity, quantity_to_take
+
+        See '_apply_strategy_default' for a short example.
+
+        """
         method_name = "_apply_strategy_%s" % (self.removal_strategy)
         yield from getattr(self, method_name)(quants)
 
@@ -157,3 +177,53 @@ class StockReserveRule(models.Model):
 
             if float_compare(need, location_quantity, rounding) != -1:
                 need = yield location, location_quantity, need
+
+    def _apply_strategy_packaging(self, quants):
+        need = yield
+        # Group by location (in this removal strategies, we want to consider
+        # the total quantity held in a location).
+        quants_per_bin = quants._group_by_location()
+
+        product = fields.first(quants).product_id
+
+        # we'll walk the packagings from largest to smallest to have the
+        # largest containers as possible (1 pallet rather than 10 boxes)
+        packaging_quantities = sorted(
+            product.packaging_ids.mapped("qty"), reverse=True
+        )
+
+        rounding = product.uom_id.rounding
+
+        def is_greater_eq(value, other):
+            return (
+                float_compare(value, other, precision_rounding=rounding) >= 0
+            )
+
+        for pack_quantity in packaging_quantities:
+            # Get quants quantity on each loop because they may change.
+            # Sort by max quant first so we have more chance to take a full
+            # package. But keep the original ordering for equal quantities!
+            bins = sorted(
+                [
+                    (
+                        sum(quants.mapped("quantity"))
+                        - sum(quants.mapped("reserved_quantity")),
+                        quants,
+                        location,
+                    )
+                    for location, quants in quants_per_bin
+                ],
+                reverse=True,
+            )
+
+            for location_quantity, quants, location in bins:
+                if location_quantity <= 0:
+                    continue
+                enough_for_packaging = is_greater_eq(
+                    location_quantity, pack_quantity
+                )
+                asked_more_than_packaging = is_greater_eq(need, pack_quantity)
+                if enough_for_packaging and asked_more_than_packaging:
+                    # compute how much packaging we can get
+                    take = (need // pack_quantity) * pack_quantity
+                    need = yield location, location_quantity, take
