@@ -262,6 +262,38 @@ class TestReserveRule(common.SavepointCase):
         )
         self.assertEqual(move.state, "assigned")
 
+    def test_quant_domain(self):
+        self._update_qty_in_location(self.loc_zone1_bin1, self.product1, 100)
+        self._update_qty_in_location(self.loc_zone2_bin1, self.product1, 100)
+        self._update_qty_in_location(self.loc_zone3_bin1, self.product1, 100)
+        picking = self._create_picking(self.wh, [(self.product1, 200)])
+
+        domain = [("quantity", ">", 200)]
+        self._create_rules(
+            [
+                # This rule is not excluded by the domain,
+                # but the quant will be as the quantity is less than 200.
+                {
+                    "location_id": self.loc_zone1.id,
+                    "sequence": 1,
+                    "quant_domain": domain,
+                },
+                {"location_id": self.loc_zone2.id, "sequence": 2},
+                {"location_id": self.loc_zone3.id, "sequence": 3},
+            ]
+        )
+        picking.action_assign()
+        move = picking.move_lines
+        ml = move.move_line_ids
+        self.assertRecordValues(
+            ml,
+            [
+                {"location_id": self.loc_zone2_bin1.id, "product_qty": 100},
+                {"location_id": self.loc_zone3_bin1.id, "product_qty": 100},
+            ],
+        )
+        self.assertEqual(move.state, "assigned")
+
     def test_rule_empty_bin(self):
         self._update_qty_in_location(self.loc_zone1_bin1, self.product1, 300)
         self._update_qty_in_location(self.loc_zone1_bin2, self.product1, 150)

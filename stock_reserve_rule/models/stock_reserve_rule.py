@@ -105,7 +105,7 @@ class StockReserveRule(models.Model):
         return True
 
     def _eval_quant_domain(self, quants, domain):
-        quant_domain = [("id", "in", quants.id)]
+        quant_domain = [("id", "in", quants.ids)]
         return self.env["stock.quant"].search(
             expression.AND([quant_domain, domain])
         )
