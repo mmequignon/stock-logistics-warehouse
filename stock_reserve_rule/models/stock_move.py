@@ -99,5 +99,13 @@ class StockMove(models.Model):
                 # useless to eval the other rules when still_need <= 0
                 break
 
-        # TODO call super with the rest and a location?
-        return need - still_need
+        reserved = need - still_need
+        return reserved + super()._update_reserved_quantity(
+            still_need,
+            available_quantity - reserved,
+            location_id=location_id,
+            lot_id=lot_id,
+            package_id=package_id,
+            owner_id=owner_id,
+            strict=strict,
+        )
