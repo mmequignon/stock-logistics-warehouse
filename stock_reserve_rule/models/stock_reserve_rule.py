@@ -27,7 +27,7 @@ class StockReserveRule(models.Model):
     name = fields.Char(string="Description")
     display_name = fields.Char(compute="_compute_display_name", store=True)
     sequence = fields.Integer(default=lambda s: s._default_sequence())
-    location_id = fields.Many2one(comodel_name="stock.location")
+    location_id = fields.Many2one(comodel_name="stock.location", required=True)
     company_id = fields.Many2one(
         comodel_name="res.company",
         default=lambda self: self.env.user.company_id.id,
@@ -74,12 +74,9 @@ class StockReserveRule(models.Model):
     @api.depends("name", "location_id")
     def _compute_display_name(self):
         for rule in self:
-            display_name = rule.name if rule.name else ""
-            if rule.location_id:
-                display_name = "%s (%s)" % (
-                    display_name,
-                    rule.location_id.display_name,
-                )
+            display_name = rule.location_id.display_name
+            if rule.name:
+                display_name = "%s (%s)" % (rule.name, display_name)
             rule.display_name = display_name
 
     # TODO cache?
