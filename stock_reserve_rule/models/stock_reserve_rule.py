@@ -26,7 +26,7 @@ class StockReserveRule(models.Model):
 
     name = fields.Char(string="Description")
     display_name = fields.Char(compute="_compute_display_name", store=True)
-    sequence = fields.Integer(default=0)
+    sequence = fields.Integer(default=lambda s: s._default_sequence())
     location_id = fields.Many2one(comodel_name="stock.location")
     # TODO ACL + default value
     company_id = fields.Many2one(comodel_name="res.company")
@@ -59,6 +59,14 @@ class StockReserveRule(models.Model):
         default="default",
     )
     # TODO tags stored on procurement.group?
+
+    @api.model
+    def _default_sequence(self):
+        maxrule = self.search([], order="sequence desc", limit=1)
+        if maxrule:
+            return maxrule.sequence + 10
+        else:
+            return 0
 
     @api.depends("name", "location_id")
     def _compute_display_name(self):
