@@ -20,6 +20,7 @@
     'data': [
         'views/stock_reserve_rule_views.xml',
         'security/ir.model.access.csv',
+        'security/stock_reserve_rule_security.xml',
     ],
     'installable': True,
     'development_status': 'Alpha',

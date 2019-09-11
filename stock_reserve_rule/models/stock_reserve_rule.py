@@ -28,8 +28,10 @@ class StockReserveRule(models.Model):
     display_name = fields.Char(compute="_compute_display_name", store=True)
     sequence = fields.Integer(default=lambda s: s._default_sequence())
     location_id = fields.Many2one(comodel_name="stock.location")
-    # TODO ACL + default value
-    company_id = fields.Many2one(comodel_name="res.company")
+    company_id = fields.Many2one(
+        comodel_name="res.company",
+        default=lambda self: self.env.user.company_id.id,
+    )
     active = fields.Boolean(default=True)
 
     # rule applicability

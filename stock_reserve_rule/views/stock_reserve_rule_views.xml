@@ -17,6 +17,7 @@
           <group string="Rule Applicability" name="configuration">
               <field name="location_id"/>
               <field name="rule_domain" widget="domain"  options="{'model': 'stock.move'}" />
+              <field name="company_id" groups="base.group_multi_company"/>
           </group>
           <group string="Removal Rules" name="rule">
             <field name="quant_domain" widget="domain"  options="{'model': 'stock.quant'}" />
