@@ -2,7 +2,7 @@
 
 {
     'name': 'Stock Reservation Rules',
-    'summary': 'Configure reservation rules by location zones',
+    'summary': 'Configure reservation rules by location',
     'version': '12.0.1.0.0',
     'author': "Camptocamp, Odoo Community Association (OCA)",
     'website': "https://github.com/OCA/stock-logistics-warehouse",
@@ -22,5 +22,6 @@
         'security/ir.model.access.csv',
     ],
     'installable': True,
+    'development_status': 'Alpha',
     'license': 'AGPL-3',
 }

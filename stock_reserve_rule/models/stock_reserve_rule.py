@@ -1,6 +1,6 @@
 # Copyright 2019 Camptocamp SA
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
-from odoo import _, api, exceptions, fields, models
+from odoo import api, fields, models
 from odoo.tools.safe_eval import safe_eval
 from odoo.osv import expression
 from odoo.tools.float_utils import float_compare
@@ -44,16 +44,17 @@ class StockReserveRule(models.Model):
     quant_domain = fields.Char(
         string="Quants Domain",
         default=[],
-        help="Filter Quants allowed to be reserved for this location.",
+        help="Filter Quants allowed to be reserved for this location "
+        "and sub-locations.",
     )
 
     # advanced removal strategy
     removal_strategy = fields.Selection(
-        string="Advanced Removed Strategy",
+        string="Advanced Removal Strategy",
         selection=[
             ("default", "Default Removal Strategy"),
             ("empty_bin", "Empty Bins"),
-            ("packaging", "Only Full Packaging"),
+            ("packaging", "Prefer Full Packaging"),
         ],
         required=True,
         default="default",
