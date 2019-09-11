@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="stock_putaway_list_inherit" model="ir.ui.view">
+        <field name="name">stock.putaway.rule.tree.inherit</field>
+        <field name="model">stock.putaway.rule</field>
+        <field name="inherit_id" ref="stock_putaway_rule.stock_putaway_list" />
+        <field name="arch" type="xml">
+            <field name="location_in_id" position="after">
+                <field name="method" />
+            </field>
+            <field name="location_out_id" position="after">
+                <field name="abc_priority" />
+            </field>
+        </field>
+    </record>
+
+    <record id="view_putaway_search_inherit" model="ir.ui.view">
+        <field name="name">stock.putaway.rule.search.inherit</field>
+        <field name="model">stock.putaway.rule</field>
+        <field name="inherit_id" ref="stock_putaway_rule.view_putaway_search" />
+        <field name="arch" type="xml">
+            <field name="location_in_id" position="after">
+                <field name="method" />
+            </field>
+            <field name="location_out_id" position="after">
+                <field name="abc_priority" />
+            </field>
+            <filter name="location_in" position="after">
+                <filter string="Method" name="method" context="{'group_by':'method'}"/>
+            </filter>
+            <filter name="location_out" position="after">
+                <filter string="ABC Priority" name="abc_priority" context="{'group_by':'abc_priority'}"/>
+            </filter>
+        </field>
+    </record>
+
+</odoo>
