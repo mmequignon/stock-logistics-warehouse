@@ -42,16 +42,11 @@ class StockMove(models.Model):
         domain = [
             ("state", "in", states),
             ("product_id", "=", self.product_id.id),
-            # TODO easier way to customize date field to use
             ("procure_method", "=", "make_to_stock"),
-            # ("location_dest_id.usage", "=", "customer"),
+            # FIXME searchable? (might need to write an optimized SQL here)
+            ("picking_code", "=", "outgoing"),
+            # TODO easier way to customize date field to use
             ("date", "<=", self.date),
-            # TODO do we need to check sublocations?
-            (
-                "location_id",
-                "child_of",
-                location_id.id if location_id else self.location_id.id,
-            ),
         ]
         # TODO priority?
         return domain

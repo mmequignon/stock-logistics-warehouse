@@ -31,21 +31,30 @@ class TestVirtualReservation(common.SavepointCase):
             {"name": "Bin1", "location_id": cls.loc_stock.id, "kind": "bin"}
         )
 
-    def _create_picking(self, wh, products=None, date=None):
+    def _create_picking(self, wh, products=None, date=None, code='outgoing'):
         """Create picking
 
         Products must be a list of tuples (product, quantity).
         One stock move will be created for each tuple.
         """
 
+        setup = {
+            'outgoing': {
+                'picking_type_id': wh.out_type_id,
+                'location_id': wh.lot_stock_id,
+                'location_dest_id': self.loc_customer,
+            },
+        }
+        assert setup.get(code)
+
         if products is None:
             products = []
 
         values = {
-            "location_id": wh.lot_stock_id.id,
-            "location_dest_id": wh.wh_output_stock_loc_id.id,
+            "location_id": setup[code]['location_id'].id,
+            "location_dest_id": setup[code]['location_dest_id'].id,
             "partner_id": self.partner_delta.id,
-            "picking_type_id": wh.pick_type_id.id,
+            "picking_type_id": setup[code]['picking_type_id'].id,
         }
 
         if date:
@@ -59,8 +68,8 @@ class TestVirtualReservation(common.SavepointCase):
                 "product_uom_qty": qty,
                 "product_uom": product.uom_id.id,
                 "picking_id": picking.id,
-                "location_id": wh.lot_stock_id.id,
-                "location_dest_id": wh.wh_output_stock_loc_id.id,
+                "location_id": setup[code]['location_id'].id,
+                "location_dest_id": setup[code]['location_dest_id'].id,
                 "state": "confirmed",
             }
             if date:
