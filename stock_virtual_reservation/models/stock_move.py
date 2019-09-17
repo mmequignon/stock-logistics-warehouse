@@ -15,21 +15,17 @@ class StockMove(models.Model):
         " a real reservation yet",
     )
 
+    # TODO does it make sense to have the 'virtual reserved qty' on product
+    # alongside other quantities?
     @api.depends()
     def _compute_virtual_reserved_qty(self):
         for move in self:
-            if (
-                move.location_id.should_bypass_reservation()
-                or move.product_id.type == "consu"
-                or move.procure_method == "make_to_order"
-                or move.move_orig_ids
-            ):
+            if not move._should_compute_virtual_reservation():
                 move.virtual_reserved_qty = 0.
                 continue
-            forced_package_id = move.package_level_id.package_id or None
-            available = self.env["stock.quant"]._get_available_quantity(
-                move.product_id, move.location_id, package_id=forced_package_id
-            )
+            # TODO verify where we should check the quantity for (full
+            # warehouse?)
+            available = move.product_id.qty_available
             move.virtual_reserved_qty = max(
                 min(
                     available - move._virtual_reserved_qty(), self.product_qty
@@ -37,12 +33,18 @@ class StockMove(models.Model):
                 0.,
             )
 
+    def _should_compute_virtual_reservation(self):
+        return (
+            self.picking_code == 'outgoing'
+            and not self.product_id.type == "consu"
+            and not self.location_id.should_bypass_reservation()
+        )
+
     def _virtual_quantity_domain(self, location_id=None):
         states = ("draft", "confirmed", "partially_available", "waiting")
         domain = [
             ("state", "in", states),
             ("product_id", "=", self.product_id.id),
-            ("procure_method", "=", "make_to_stock"),
             # FIXME searchable? (might need to write an optimized SQL here)
             ("picking_code", "=", "outgoing"),
             # TODO easier way to customize date field to use
@@ -81,11 +83,12 @@ class StockMove(models.Model):
     ):
         # TODO how to ensure this is done before any other override of the
         # method...
-        if not strict:
+        if self._should_compute_virtual_reservation():
             virtual_reserved = self._virtual_reserved_qty(
                 location_id=location_id
             )
             available_quantity = max(available_quantity - virtual_reserved, 0.)
+
         return super()._update_reserved_quantity(
             need,
             available_quantity,
