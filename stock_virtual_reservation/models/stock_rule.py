@@ -26,7 +26,8 @@ class StockRule(models.Model):
         values,
     ):
         if (
-            self.virtual_reservation_defer_pull
+            not self.env.context.get("_rule_no_virtual_defer")
+            and self.virtual_reservation_defer_pull
             # we generate the destination operation
             # TODO is there a reason for this? Why not
             # generate them when available too?
