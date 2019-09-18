@@ -21,24 +21,23 @@ class StockMove(models.Model):
     @api.depends()
     def _compute_virtual_reserved_qty(self):
         for move in self:
-            if not move._should_compute_virtual_reservation():
-                move.virtual_reserved_qty = 0.
-                continue
-            # TODO verify where we should check the quantity for (full
-            # warehouse?)
-            available = move.product_id.qty_available
-            move.virtual_reserved_qty = max(
-                min(
-                    available - move._virtual_reserved_qty(), self.product_qty
-                ),
-                0.,
-            )
+            move.virtual_reserved_qty = move._get_virtual_reserved_qty()
 
     def _should_compute_virtual_reservation(self):
         return (
             self.picking_code == "outgoing"
             and not self.product_id.type == "consu"
             and not self.location_id.should_bypass_reservation()
+        )
+
+    def _get_virtual_reserved_qty(self):
+        if not self._should_compute_virtual_reservation():
+            return 0.
+        # TODO verify where we should check the quantity for (full
+        # warehouse?)
+        available = self.product_id.qty_available
+        return max(
+            min(available - self._virtual_reserved_qty(), self.product_qty), 0.
         )
 
     def _virtual_quantity_domain(self):
@@ -117,6 +116,8 @@ class StockMove(models.Model):
             "Product Unit of Measure"
         )
         for move in self:
+            if move.rule_id.action != "pull":
+                continue
             if move.state not in (
                 "waiting",
                 "confirmed",
@@ -125,10 +126,9 @@ class StockMove(models.Model):
                 continue
             if move.product_id.type not in ("consu", "product"):
                 continue
-            # TODO filter quantities on a location?
-            available_quantity = (
-                move.product_id.qty_available - move.virtual_reserved_qty
-            )
+            # do not use the computed field, because it will keep
+            # a value in cache that we cannot invalidate declaratively
+            available_quantity = move._get_virtual_reserved_qty()
             if (
                 float_compare(
                     available_quantity, 0, precision_digits=precision
@@ -137,7 +137,7 @@ class StockMove(models.Model):
             ):
                 continue
 
-            # TODO probably not the good way to do this
+            # TODO probably not the good way to do this?
             already_in_pull = sum(move.mapped("move_orig_ids.product_qty"))
             remaining = move.product_uom_qty - already_in_pull
 
@@ -145,19 +145,16 @@ class StockMove(models.Model):
                 continue
 
             quantity = min(remaining, available_quantity)
-
             values = move._prepare_procurement_values()
 
             self.env["procurement.group"].with_context(
                 _rule_no_virtual_defer=True
-            ).run(
+            ).run_defer(
                 move.product_id,
                 quantity,
                 move.product_uom,
                 move.location_id,
-                move.rule_id.name if move.rule_id.name else "/",
                 move.origin,
                 values,
             )
-            # TODO if not complete: create backorder?
         return True
