@@ -7,11 +7,13 @@ class StockLocation(models.Model):
 
     _inherit = 'stock.location'
 
-    putaway_rule_ids = fields.One2many('stock.putaway.rule', 'location_in_id',
-                                       'Putaway Rules')
+    putaway_rule_ids = fields.One2many(
+        'stock.putaway.rule', 'location_in_id', 'Putaway Rules'
+    )
 
     def get_putaway_strategy(self, product):
-        ''' Returns the location where the product has to be put, if any compliant putaway strategy is found. Otherwise returns None.'''
+        """ Returns the location where the product has to be put, if any
+            compliant putaway strategy is found. Otherwise returns None."""
         current_location = self
         putaway_location = self.env['stock.location']
         while current_location and not putaway_location:
