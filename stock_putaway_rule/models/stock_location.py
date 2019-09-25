@@ -18,17 +18,26 @@ class StockLocation(models.Model):
         putaway_location = self.env['stock.location']
         while current_location and not putaway_location:
             # Looking for a putaway about the product.
-            putaway_rules = current_location.putaway_rule_ids.filtered(lambda x: x.product_id == product)
-            if putaway_rules:
-                putaway_location = putaway_rules[0].location_out_id
+            putaway_location = current_location._get_putaway_rule_location(
+                product=product
+            )
             # If not product putaway found, we're looking with category so.
-            else:
-                categ = product.categ_id
-                while categ:
-                    putaway_rules = current_location.putaway_rule_ids.filtered(lambda x: x.category_id == categ)
-                    if putaway_rules:
-                        putaway_location = putaway_rules[0].location_out_id
-                        break
-                    categ = categ.parent_id
+            categ = product.categ_id
+            while categ:
+                putaway_location = current_location._get_putaway_rule_location(
+                    category=categ
+                )
+                if putaway_location:
+                    break
+                categ = categ.parent_id
             current_location = current_location.location_id
         return putaway_location
+
+    def _get_putaway_rule_location(self, product=None, category=None):
+        self.ensure_one()
+        putaway_rules = self.putaway_rule_ids.filter_rules(
+            product=product, category=category)
+        if putaway_rules:
+            putaway = putaway_rules.select_putaway()
+            return putaway._get_destination_location()
+        return self.browse()

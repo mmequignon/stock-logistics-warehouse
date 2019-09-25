@@ -118,3 +118,18 @@ class StockPutawayRule(models.Model):
                         "a new one."
                     ))
         return super(StockPutawayRule, self).write(vals)
+
+    def filter_rules(self, product=None, category=None):
+        """Filter records according to product or categor"""
+        assert product or category
+        if product:
+            return self.filtered(lambda x: x.product_id == product)
+        else:
+            return self.filtered(lambda x: x.category_id == category)
+
+    def select_putaway(self):
+        """Select a putaway location to return"""
+        return self[0]
+
+    def _get_destination_location(self):
+        return self.location_out_id
