@@ -22,6 +22,7 @@ class StockMove(models.Model):
         help="Available quantity minus virtually reserved by older"
         " operations that do not have a real reservation yet",
     )
+    need_rule_pull = fields.Boolean()
 
     @api.depends()
     def _compute_virtual_available_qty(self):
@@ -47,9 +48,8 @@ class StockMove(models.Model):
 
     def _virtual_quantity_domain(self):
         domain = [
-            ("state", "in", ("confirmed", "waiting")),
+            ("need_rule_pull", "=", True),
             ("product_id", "=", self.product_id.id),
-            ("picking_code", "=", "outgoing"),
             ("date_priority", "<=", self.date_priority),
             ("warehouse_id", "=", self.warehouse_id.id),
         ]
@@ -95,11 +95,9 @@ class StockMove(models.Model):
             "Product Unit of Measure"
         )
         for move in self:
-            # FIXME what to do if there is no pull rule?
-            # should we have a different state for moves that need a release?
-            if move.state not in ("confirmed", "waiting"):
+            if not move.need_rule_pull:
                 continue
-            if move.product_id.type not in ("consu", "product"):
+            if move.state not in ("confirmed", "waiting"):
                 continue
             # do not use the computed field, because it will keep
             # a value in cache that we cannot invalidate declaratively
