@@ -81,8 +81,10 @@ class StockMove(models.Model):
         # The method set procure_method as 'make_to_stock' by default on split,
         # but we want to keep 'make_to_order' for chained moves when we split
         # a partially available move in _run_stock_rule().
-        if self.env.context.get("procure_method"):
-            vals["procure_method"] = self.env.context["procure_method"]
+        if self.env.context.get("virtual_reservation"):
+            vals.update(
+                {"procure_method": self.procure_method, "need_rule_pull": True}
+            )
         return vals
 
     @api.multi
@@ -121,9 +123,7 @@ class StockMove(models.Model):
                     # we don't want to delivery unless we can deliver all at
                     # once
                     continue
-                move.with_context(procure_method=move.procure_method)._split(
-                    remaining
-                )
+                move.with_context(pvirtual_reservation=True)._split(remaining)
 
             values = move._prepare_procurement_values()
 
