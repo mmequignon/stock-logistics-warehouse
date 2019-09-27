@@ -123,7 +123,7 @@ class StockMove(models.Model):
                     # we don't want to delivery unless we can deliver all at
                     # once
                     continue
-                move.with_context(pvirtual_reservation=True)._split(remaining)
+                move.with_context(virtual_reservation=True)._split(remaining)
 
             values = move._prepare_procurement_values()
 
