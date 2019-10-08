@@ -73,6 +73,7 @@ class StockLocation(models.Model):
                 ("posy", "=", coordY + 1),
             ]
         )
+        location.ensure_one()
         view = self.env.ref("stock.view_location_form")
         action = self.env.ref("stock.action_location_form").read()[0]
         action.update(
@@ -118,7 +119,7 @@ class StockLocation(models.Model):
             super(StockLocation, location).write(vals)
             if trays_to_update:
                 self._update_tray_sublocations()
-            elif "posz" in vals and location.tray_type_id == "tray":
+            elif "posz" in vals and location.tray_type_id:
                 # On initial generation (when tray_to_update is true),
                 # the sublocations are already generated with the pos z.
                 location.child_ids.write({"posz": vals["posz"]})
@@ -166,6 +167,7 @@ class StockLocation(models.Model):
         cells = location.tray_type_id._generate_cells_matrix()
         for cell in location.child_ids:
             if cell.tray_cell_contains_stock:
+                # 1 means used
                 cells[cell.posy - 1][cell.posx - 1] = 1
         return cells
 
