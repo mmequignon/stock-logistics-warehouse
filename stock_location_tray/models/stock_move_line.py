@@ -18,8 +18,8 @@ class StockMoveLine(models.Model):
     @api.depends("location_id", "location_dest_id")
     def _compute_tray_matrix(self):
         for record in self:
-            record.tray_source_matrix = record.location_id.tray_matrix()
-            record.tray_dest_matrix = record.location_dest_id.tray_matrix()
+            record.tray_source_matrix = record.location_id.tray_matrix
+            record.tray_dest_matrix = record.location_dest_id.tray_matrix
 
     def _action_show_tray(self, location_from):
         assert location_from in ("source", "dest")
