@@ -103,12 +103,36 @@ class StockMove(models.Model):
                     break
 
         reserved = need - still_need
-        return reserved + super()._update_reserved_quantity(
-            still_need,
-            available_quantity - reserved,
-            location_id=location_id,
-            lot_id=lot_id,
-            package_id=package_id,
-            owner_id=owner_id,
-            strict=strict,
-        )
+        if rule.fallback_location_id:
+            quants = self.env["stock.quant"]._gather(
+                self.product_id,
+                rule.fallback_location_id,
+                lot_id=lot_id,
+                package_id=forced_package_id,
+                owner_id=owner_id,
+                strict=strict,
+            )
+            fallback_quantity = sum(quants.mapped("quantity")) - sum(
+                quants.mapped("reserved_quantity")
+            )
+            return reserved + super()._update_reserved_quantity(
+                still_need,
+                fallback_quantity,
+                location_id=rule.fallback_location_id,
+                lot_id=lot_id,
+                package_id=package_id,
+                owner_id=owner_id,
+                strict=strict,
+            )
+
+        else:
+            # Implicit fallback on the original location
+            return reserved + super()._update_reserved_quantity(
+                still_need,
+                available_quantity - reserved,
+                location_id=location_id,
+                lot_id=lot_id,
+                package_id=package_id,
+                owner_id=owner_id,
+                strict=strict,
+            )
