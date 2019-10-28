@@ -19,13 +19,15 @@ class StockLocation(models.Model):
         while current_location and not putaway_location:
             # Looking for a putaway about the product.
             putaway_location = current_location._get_putaway_rule_location(
-                product=product
+                product=product,
             )
+            if putaway_location:
+                break
             # If not product putaway found, we're looking with category so.
             categ = product.categ_id
             while categ:
                 putaway_location = current_location._get_putaway_rule_location(
-                    category=categ
+                    category=categ,
                 )
                 if putaway_location:
                     break

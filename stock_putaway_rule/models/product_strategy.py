@@ -129,7 +129,7 @@ class StockPutawayRule(models.Model):
 
     def select_putaway(self):
         """Select a putaway location to return"""
-        return self[0]
+        return self[0] if len(self) > 1 else self
 
     def _get_destination_location(self):
         return self.location_out_id
