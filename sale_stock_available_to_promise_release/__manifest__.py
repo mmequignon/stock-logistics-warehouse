@@ -9,7 +9,7 @@
     'category': 'Stock Management',
     'depends': [
         'sale_stock',
-        'stock_virtual_reservation',
+        'stock_available_to_promise_release',
     ],
     'data': [
     ],
