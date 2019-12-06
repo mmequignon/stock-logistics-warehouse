@@ -57,6 +57,13 @@ class StockMove(models.Model):
                 routing_quantities.setdefault(routing_picking_type, 0.0)
                 routing_quantities[routing_picking_type] += qty
 
+            no_routing = self.env['stock.picking.type']
+            not_routed_reserved_qty = routing_quantities.get(no_routing, 0)
+            unreserved_qty = move.product_qty - move.reserved_availability
+            total_not_routed_qty = not_routed_reserved_qty + unreserved_qty
+            if total_not_routed_qty:
+                routing_quantities[no_routing] = total_not_routed_qty
+
             if len(routing_quantities) == 1:
                 # The whole quantity can be taken from only one location (an
                 # empty routing picking type being equal to one location here),
@@ -84,7 +91,9 @@ class StockMove(models.Model):
                         new_move_id
                     )
 
-        # it is important to assign the routed moves first
+        # it is important to assign the routed moves first, otherwise, the move
+        # without route will reserve the products in the locations that should
+        # have been used for the moves with a route
         for location_id, new_move_ids in new_move_per_location.items():
             new_moves = self.browse(new_move_ids)
             new_moves.with_context(

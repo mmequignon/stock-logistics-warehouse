@@ -212,6 +212,74 @@ class TestSourceRoutingOperation(common.SavepointCase):
         self.assert_src_handover(move_line_middle)
         self.assert_dest_output(move_line_middle)
 
+    def test_partial_available(self):
+        pick_picking, customer_picking = self._create_pick_ship(
+            self.wh, [(self.product1, 100)]
+        )
+        move_pick = pick_picking.move_lines
+        move_out = customer_picking.move_lines
+
+        # in highbay → should generate a new operation in highbay picking type
+        self._update_product_qty_in_location(
+            self.location_hb_1_2, self.product1, 20
+        )
+        pick_picking.action_assign()
+
+        # the move should be split in 2 parts:
+        # 80 'confirmed' because no stock
+        # 20 'waiting' with a move_orig_ids taking from hrl through handover
+        move_pick_split = pick_picking.move_lines - move_pick
+        self.assertEqual(move_pick.product_qty, 80)
+        self.assertEqual(move_pick_split.product_qty, 20)
+        self.assertEqual(move_pick.state, 'confirmed')
+        self.assertEqual(move_pick_split.state, 'waiting')
+
+        #                     move_pick (80 unavail.) —\
+        #                                               —→ move_out
+        # move_routing (20) → move_pick_split (20) ————/
+
+        self.assert_src_stock(move_pick_split)
+        self.assert_dest_output(move_pick_split)
+        self.assert_src_stock(move_pick)
+        self.assert_dest_output(move_pick)
+        self.assert_src_output(move_out)
+        self.assert_dest_customer(move_out)
+        self.assertEqual(move_pick.move_dest_ids, move_out)
+        self.assertEqual(move_pick_split.move_dest_ids, move_out)
+
+        self.assertFalse(move_pick.move_orig_ids)
+        move_routing = move_pick_split.move_orig_ids
+        self.assertEqual(move_routing.state, 'assigned')
+
+        ml = move_routing.move_line_ids
+
+        self.assert_src_highbay_1_2(ml)
+        self.assert_dest_handover(ml)
+        self.assertEqual(
+            ml.picking_id.picking_type_id, self.pick_type_routing_op
+        )
+
+        self.assert_src_stock(move_routing.picking_id)
+        self.assert_dest_handover(move_routing.picking_id)
+
+        # we deliver move a to check that our routing move line properly takes
+        # goods from the handover
+        self.process_operations(move_routing)
+        self.assertEqual(move_routing.state, 'done')
+        self.assertEqual(move_pick.state, 'confirmed')
+        self.assertEqual(move_pick_split.state, 'assigned')
+        self.assertEqual(move_out.state, 'waiting')
+
+        move_line_middle = move_pick_split.move_line_ids
+        self.assertEqual(len(move_line_middle), 1)
+        self.assert_src_handover(move_line_middle)
+        self.assert_dest_output(move_line_middle)
+
+        self.process_operations(move_pick_split)
+        self.assertEqual(move_pick.state, 'confirmed')
+        self.assertEqual(move_pick_split.state, 'done')
+        self.assertEqual(move_out.state, 'partially_available')
+
     def test_several_moves(self):
         pick_picking, customer_picking = self._create_pick_ship(
             self.wh, [(self.product1, 10), (self.product2, 10)]
