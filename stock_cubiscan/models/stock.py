@@ -14,7 +14,7 @@ class StockWarehouse(models.Model):
 
 class ProductPackaging(models.Model):
     _inherit = "product.packaging"
-    # FIXME: Not sure this is still the best place for this constraint
+    # FIXME: move this in product_packaging_type
     _sql_constraints = [
         (
             "product_packaging_type_unique",
