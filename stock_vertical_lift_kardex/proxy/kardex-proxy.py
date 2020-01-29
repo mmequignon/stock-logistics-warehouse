@@ -98,7 +98,7 @@ class KardexClientProtocol(asyncio.Protocol):
         self.loop.stop()
 
     async def notify_odoo(self, msg):
-        url = args.odoo_url + "/vertical-lift"
+        url = self.args.odoo_url + "/vertical-lift"
         async with aiohttp.ClientSession() as session:
             params = {"answer": msg, "secret": self.args.secret}
             async with session.post(url, data=params) as resp:
