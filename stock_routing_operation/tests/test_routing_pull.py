@@ -3,7 +3,7 @@
 from odoo.tests import common
 
 
-class TestSourceRoutingOperation(common.SavepointCase):
+class TestRoutingPull(common.SavepointCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -57,8 +57,20 @@ class TestSourceRoutingOperation(common.SavepointCase):
                 "default_location_dest_id": cls.location_handover.id,
             }
         )
-        cls.location_hb.write(
-            {"src_routing_picking_type_id": cls.pick_type_routing_op.id}
+        cls.routing = cls.env["stock.routing"].create(
+            {
+                "location_id": cls.location_hb.id,
+                "rule_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "method": "pull",
+                            "picking_type_id": cls.pick_type_routing_op.id,
+                        },
+                    )
+                ],
+            }
         )
 
     def _create_pick_ship(self, wh, products=None):
@@ -135,6 +147,9 @@ class TestSourceRoutingOperation(common.SavepointCase):
     def assert_dest_shelf1(self, record):
         self.assertEqual(record.location_dest_id, self.location_shelf_1)
 
+    def assert_src_highbay(self, record):
+        self.assertEqual(record.location_id, self.location_hb)
+
     def assert_src_highbay_1_2(self, record):
         self.assertEqual(record.location_id, self.location_hb_1_2)
 
@@ -167,6 +182,8 @@ class TestSourceRoutingOperation(common.SavepointCase):
         )
         pick_picking.action_assign()
 
+        self.assertEqual(move_a.routing_rule_id, self.routing.rule_ids)
+
         ml = move_a.move_line_ids
         self.assertEqual(len(ml), 1)
         self.assert_src_highbay_1_2(ml)
@@ -174,7 +191,7 @@ class TestSourceRoutingOperation(common.SavepointCase):
 
         self.assertEqual(ml.picking_id.picking_type_id, self.pick_type_routing_op)
 
-        self.assert_src_stock(move_a)
+        self.assert_src_highbay(move_a)
         self.assert_dest_handover(move_a)
         # the move stays B stays on the same source location
         self.assert_src_output(move_b)
@@ -188,7 +205,7 @@ class TestSourceRoutingOperation(common.SavepointCase):
         # Output
         self.assert_dest_output(move_middle)
 
-        self.assert_src_stock(move_a.picking_id)
+        self.assert_src_highbay(move_a.picking_id)
         self.assert_dest_handover(move_a.picking_id)
 
         self.assertEqual(move_a.state, "assigned")
@@ -225,6 +242,8 @@ class TestSourceRoutingOperation(common.SavepointCase):
         move_b_p2 = cust_moves.filtered(lambda r: r.product_id == product2)
 
         pick_picking.action_assign()
+        self.assertEqual(move_a_p1.routing_rule_id, self.routing.rule_ids)
+        self.assertFalse(move_a_p2.routing_rule_id)
 
         # At this point, we should have 3 stock.picking:
         #
@@ -336,16 +355,21 @@ class TestSourceRoutingOperation(common.SavepointCase):
         )
 
         pick_picking.action_assign()
+
         # it splits the stock move to be able to chain the quantities from
         # the Highbay
         self.assertEqual(len(pick_picking.move_lines), 2)
         move_a1 = pick_picking.move_lines.filtered(
             lambda move: move.product_uom_qty == 4
         )
+        self.assertFalse(move_a1.routing_rule_id)
         move_a2 = pick_picking.move_lines.filtered(
             lambda move: move.product_uom_qty == 6
         )
         move_ho = move_a2.move_orig_ids
+        # move_ho is the move which has been split from move_a and moved
+        # to a different picking type
+        self.assertEqual(move_ho.routing_rule_id, self.routing.rule_ids)
         self.assertTrue(move_ho)
 
         # At this point, we should have 3 stock.picking:
@@ -446,6 +470,7 @@ class TestSourceRoutingOperation(common.SavepointCase):
             self.location_hb_1_2, move_a.product_id, 100
         )
         pick_picking.action_assign()
+        self.assertEqual(move_a.routing_rule_id, self.routing.rule_ids)
 
         ml = move_a.move_line_ids
         self.assertEqual(len(ml), 1)
@@ -454,7 +479,7 @@ class TestSourceRoutingOperation(common.SavepointCase):
 
         self.assertEqual(ml.picking_id.picking_type_id, self.pick_type_routing_op)
 
-        self.assert_src_stock(move_a)
+        self.assert_src_highbay(move_a)
         self.assertEqual(move_a.location_dest_id, area1)
         # the move stays B stays on the same source location
         self.assert_src_output(move_b)
@@ -465,7 +490,7 @@ class TestSourceRoutingOperation(common.SavepointCase):
         self.assertEqual(move_a.move_dest_ids, move_b)
         self.assertFalse(move_b.move_dest_ids)
 
-        self.assert_src_stock(move_a.picking_id)
+        self.assert_src_highbay(move_a.picking_id)
         self.assertEqual(move_a.picking_id.location_dest_id, area1)
 
         self.assertEqual(move_a.state, "assigned")
@@ -506,6 +531,7 @@ class TestSourceRoutingOperation(common.SavepointCase):
             self.location_hb_1_2, move_a.product_id, 100
         )
         pick_picking.action_assign()
+        self.assertEqual(move_a.routing_rule_id, self.routing.rule_ids)
 
         ml = move_a.move_line_ids
         self.assertEqual(len(ml), 1)
@@ -514,7 +540,7 @@ class TestSourceRoutingOperation(common.SavepointCase):
 
         self.assertEqual(ml.picking_id.picking_type_id, self.pick_type_routing_op)
 
-        self.assert_src_stock(move_a)
+        self.assert_src_highbay(move_a)
         self.assert_dest_output(move_a)
         # the move stays B stays on the same source location
         self.assert_src_output(move_b)
@@ -525,7 +551,7 @@ class TestSourceRoutingOperation(common.SavepointCase):
         self.assertEqual(move_a.move_dest_ids, move_b)
         self.assertFalse(move_b.move_dest_ids)
 
-        self.assert_src_stock(move_a.picking_id)
+        self.assert_src_highbay(move_a.picking_id)
         self.assert_dest_output(move_a.picking_id)
 
         self.assertEqual(move_a.state, "assigned")
@@ -543,7 +569,7 @@ class TestSourceRoutingOperation(common.SavepointCase):
         # move, there will not be any change on the moves compared
         # to a standard setup
         domain = "[('product_id', '=', {})]".format(self.product2.id)
-        self.pick_type_routing_op.src_routing_move_domain = domain
+        self.routing.rule_ids.rule_domain = domain
         pick_picking, customer_picking = self._create_pick_ship(
             self.wh, [(self.product1, 10)]
         )
@@ -554,9 +580,8 @@ class TestSourceRoutingOperation(common.SavepointCase):
         )
         pick_picking.action_assign()
 
-        self.assertEqual(
-            move_a.move_line_ids.picking_id.picking_type_id, self.wh.pick_type_id
-        )
+        self.assertFalse(move_a.routing_rule_id)
+        self.assertEqual(move_a.picking_id.picking_type_id, self.wh.pick_type_id)
         # the original chaining stays the same: we don't add any move here
         self.assertFalse(move_a.move_orig_ids)
         self.assertEqual(move_a.move_dest_ids, move_b)
@@ -566,7 +591,7 @@ class TestSourceRoutingOperation(common.SavepointCase):
         # define a domain that will include the routing for this
         # move, so routing is applied
         domain = "[('product_id', '=', {})]".format(self.product1.id)
-        self.pick_type_routing_op.src_routing_move_domain = domain
+        self.routing.rule_ids.rule_domain = domain
         pick_picking, customer_picking = self._create_pick_ship(
             self.wh, [(self.product1, 10)]
         )
@@ -577,9 +602,44 @@ class TestSourceRoutingOperation(common.SavepointCase):
         )
         pick_picking.action_assign()
 
-        self.assertEqual(
-            move_a.move_line_ids.picking_id.picking_type_id, self.pick_type_routing_op
-        )
+        self.assertEqual(move_a.routing_rule_id, self.routing.rule_ids)
+        self.assertEqual(move_a.picking_id.picking_type_id, self.pick_type_routing_op)
         self.assertFalse(move_a.move_orig_ids)
         self.assertNotEqual(move_a.move_dest_ids, move_b)
         self.assertFalse(move_b.move_dest_ids)
+
+    def test_partial_qty(self):
+        pick_picking, customer_picking = self._create_pick_ship(
+            self.wh, [(self.product1, 10)]
+        )
+        move_a = pick_picking.move_lines
+        self._update_product_qty_in_location(self.location_hb_1_2, move_a.product_id, 8)
+        pick_picking.action_assign()
+
+        # move_a should remain in the PICK with an unreserved qty of 2
+        self.assertEqual(move_a.picking_id, pick_picking)
+        self.assertEqual(move_a.product_qty, 2)
+        self.assertEqual(move_a.state, "confirmed")
+        self.assertFalse(move_a.routing_rule_id)
+
+        # we have a new waiting move in the PICK with a qty of 8
+        split_move = move_a.move_dest_ids.move_orig_ids - move_a
+        self.assertEqual(split_move.picking_id, pick_picking)
+        self.assertEqual(split_move.product_qty, 8)
+        self.assertEqual(split_move.state, "waiting")
+
+        # we have a new move for the routing before the split move
+        routing_move = split_move.move_orig_ids
+        self.assertEqual(routing_move.routing_rule_id, self.routing.rule_ids)
+        self.assertRecordValues(
+            routing_move,
+            [
+                {
+                    "picking_type_id": self.pick_type_routing_op.id,
+                    "product_qty": 8,
+                    "state": "assigned",
+                }
+            ],
+        )
+        self.assert_src_highbay(routing_move)
+        self.assert_dest_handover(routing_move)
