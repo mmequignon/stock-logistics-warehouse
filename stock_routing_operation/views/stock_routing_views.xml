@@ -71,6 +71,7 @@
         <field name="model">stock.routing</field>
         <field name="arch" type="xml">
             <tree string="Stock Routing">
+                <field name="sequence" widget="handle" />
                 <field name="location_id" />
             </tree>
         </field>

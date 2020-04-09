@@ -4,10 +4,18 @@
 from odoo import fields, models
 
 
+def _default_sequence(model):
+    maxrule = model.search([], order="sequence desc", limit=1)
+    if maxrule:
+        return maxrule.sequence + 10
+    else:
+        return 0
+
+
 class StockRouting(models.Model):
     _name = "stock.routing"
     _description = "Stock Routing"
-    _order = "location_id"
+    _order = "sequence, id"
 
     _rec_name = "location_id"
 
@@ -18,6 +26,7 @@ class StockRouting(models.Model):
         ondelete="cascade",
         index=True,
     )
+    sequence = fields.Integer(default=lambda self: self._default_sequence())
     active = fields.Boolean(default=True)
     rule_ids = fields.One2many(
         comodel_name="stock.routing.rule", inverse_name="routing_id"
@@ -31,24 +40,24 @@ class StockRouting(models.Model):
         )
     ]
 
-    def _routing_rule_for_moves(self, method, moves):
+    def _default_sequence(self):
+        return _default_sequence(self)
+
+    def _routing_rule_for_moves(self, moves):
         """Return a routing rule for moves
 
-        :param method: pull (pick) or push (put-away)
         :param move: recordset of the move
         :return: dict {move: {rule: move_lines}}
         """
-        if method not in ("pull", "push"):
-            raise ValueError("routing_type must be one of ('pull', 'push')")
-
         result = {move: {} for move in moves}
         valid_rules_for_move = set()
         for move_line in moves.mapped("move_line_ids"):
-            if method == "pull":
-                location = move_line.location_id
-            else:
-                location = move_line.location_dest_id
-            location_tree = location._location_parent_tree()
+            src_location = move_line.location_id
+            dest_location = move_line.location_dest_id
+            location_tree = (
+                src_location._location_parent_tree()
+                + dest_location._location_parent_tree()
+            )
             candidate_routings = self.search([("location_id", "in", location_tree.ids)])
 
             result.setdefault(move_line.move_id, [])
@@ -57,7 +66,7 @@ class StockRouting(models.Model):
             for loc in location_tree:
                 # and search the first allowed rule in the routing
                 routing = candidate_routings.filtered(lambda r: r.location_id == loc)
-                rules = routing.rule_ids.filtered(lambda r: r.method == method)
+                rules = routing.rule_ids
                 # find the first valid rule
                 found = False
                 for rule in rules:
