@@ -17,7 +17,9 @@ class StockRoutingRule(models.Model):
     routing_id = fields.Many2one(
         comodel_name="stock.routing", required=True, ondelete="cascade"
     )
-    routing_location_id = fields.Many2one(related="routing_id.location_id")
+    routing_location_id = fields.Many2one(
+        related="routing_id.location_id", store=True, index=True
+    )
     method = fields.Selection(
         selection=[("pull", "Pull"), ("push", "Push")],
         help="On pull, the routing is applied when the source location of "
