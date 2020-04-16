@@ -1,12 +1,15 @@
 # Copyright (C) 2011 Julius Network Solutions SARL <contact@julius.fr>
-# Copyright 2018 Camptocamp SA
+# Copyright 2020 Camptocamp SA
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl)
 
 {
     "name": "Move Stock Location",
-    "version": "12.0.1.3.1",
+    "version": "12.0.2.0.0",
     "author": "Julius Network Solutions, "
+              "BCIM,"
+              "Camptocamp,"
               "Odoo Community Association (OCA)",
+        'Odoo Community Association (OCA)',
     "summary": "This module allows to move all stock "
                "in a stock location to an other one.",
     "website": "https://github.com/OCA/stock-logistics-warehouse",
