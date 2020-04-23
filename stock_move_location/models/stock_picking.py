@@ -4,7 +4,6 @@
 
 from odoo import _, models
 from odoo.exceptions import UserError
-from itertools import groupby
 
 
 class StockPicking(models.Model):
@@ -21,6 +20,7 @@ class StockPicking(models.Model):
         context = {
             'active_ids': self._get_movable_quants().ids,
             'active_model': 'stock.quant',
+            'only_reserved_qty': True,
         }
         move_wizard = self.env['wiz.stock.move.location'].with_context(context).create({
             'destination_location_id' : self.location_dest_id.id,
