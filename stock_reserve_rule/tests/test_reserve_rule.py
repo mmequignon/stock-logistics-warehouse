@@ -1,6 +1,7 @@
 # Copyright 2019 Camptocamp (https://www.camptocamp.com)
 
 from odoo.tests import common
+from odoo import exceptions
 
 
 class TestReserveRule(common.SavepointCase):
@@ -130,6 +131,44 @@ class TestReserveRule(common.SavepointCase):
             ]
         )
 
+    def test_rule_fallback_child_of_location(self):
+        # fallback is a child
+        self._create_rule(
+            {
+                "fallback_location_id": self.loc_zone1.id,
+            },
+            [
+                {"location_id": self.loc_zone1.id},
+            ],
+        )
+        # fallback is not a child
+        with self.assertRaises(exceptions.ValidationError):
+            self._create_rule(
+                {
+                    "fallback_location_id": self.env.ref(
+                        "stock.stock_location_locations").id,
+                },
+                [{"location_id": self.loc_zone1.id}],
+            )
+
+    def test_removal_rule_location_child_of_rule_location(self):
+        # removal rule location is a child
+        self._create_rule(
+            {},
+            [{"location_id": self.loc_zone1.id}],
+        )
+        # removal rule location is not a child
+        with self.assertRaises(exceptions.ValidationError):
+            self._create_rule(
+                {},
+                [
+                    {
+                        "location_id": self.env.ref(
+                            "stock.stock_location_locations").id,
+                    },
+                ],
+            )
+
     def test_rule_take_all_in_2(self):
         all_locs = (
             self.loc_zone1_bin1,
@@ -223,7 +262,7 @@ class TestReserveRule(common.SavepointCase):
 
     def test_rule_fallback(self):
         reserve = self.env["stock.location"].create(
-            {"name": "Reserve", "location_id": self.wh.view_location_id.id}
+            {"name": "Reserve", "location_id": self.wh.lot_stock_id.id}
         )
 
         self._update_qty_in_location(self.loc_zone1_bin1, self.product1, 100)
