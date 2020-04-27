@@ -89,6 +89,7 @@
                 <field name="sequence" widget="handle" />
                 <field name="name" />
                 <field name="location_id" />
+                <field name="rule_domain"/>
             </tree>
         </field>
     </record>
