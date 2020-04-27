@@ -62,18 +62,12 @@ class TestFillwithStock(common.TransactionCase):
         # picking filled with quants in bin
         self.assertEqual(len(picking_stock_pack.move_lines), 2)
         self.assertEqual(
-            picking_stock_pack.move_lines[0].product_id,
-            self.product1
-        )
-        self.assertEqual(
-            picking_stock_pack.move_lines[0].product_uom_qty,
+            picking_stock_pack.move_lines.filtered(
+                lambda m: m.product_id == self.product1).product_uom_qty,
             10.0
         )
         self.assertEqual(
-            picking_stock_pack.move_lines[1].product_id,
-            self.product2
-        )
-        self.assertEqual(
-            picking_stock_pack.move_lines[1].product_uom_qty,
+            picking_stock_pack.move_lines.filtered(
+                lambda m: m.product_id == self.product2).product_uom_qty,
             5.0
         )

@@ -13,14 +13,12 @@ class StockPicking(models.Model):
         # check source location has no children, i.e. we scanned a bin
 
         self.ensure_one()
-        if self.location_id.child_ids:
-            raise UserError(_('Please choose a source end location'))
-        if self.move_lines:
-            raise UserError(_('Moves lines already exists'))
+        self._validate_picking()
         context = {
             'active_ids': self._get_movable_quants().ids,
             'active_model': 'stock.quant',
             'only_reserved_qty': True,
+            'planned': True,
         }
         move_wizard = self.env['wiz.stock.move.location'].with_context(context).create({
             'destination_location_id' : self.location_dest_id.id,
@@ -30,13 +28,18 @@ class StockPicking(models.Model):
         })
         move_wizard._onchange_destination_location_id()
         move_wizard.action_move_location()
-
         return True
+
+    def _validate_picking(self):
+        if self.location_id.child_ids:
+            raise UserError(_('Please choose a source end location'))
+        if self.move_lines:
+            raise UserError(_('Moves lines already exists'))
 
     def _get_movable_quants(self):
         return self.env['stock.quant'].search(
             [
-                ('location_id', 'child_of', self.location_id.id),
+                ('location_id', '=', self.location_id.id),
                 ('quantity', '>', 0.0),
             ]
         )
