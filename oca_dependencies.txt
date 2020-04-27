@@ -1,3 +1,9 @@
+# list the OCA project dependencies, one per line
+# add a github url if you need a forked version
 product-attribute
 server-ux
 web
+web
+
+stock-logistics-warehouse https://github.com/guewen/stock-logistics-warehouse 13.0-add-stock_location_tray
+web https://github.com/acsone/stock-logistics-warehouse 13.0-MIG-web-notify
