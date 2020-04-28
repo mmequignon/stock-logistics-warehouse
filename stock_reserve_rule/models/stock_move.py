@@ -119,7 +119,12 @@ class StockMove(models.Model):
                 # remaining qties
                 still_need = self.product_uom_qty - self.reserved_availability
                 if still_need:
-                    new_move_id = self._split(still_need)
+                    qty_split = self.product_uom._compute_quantity(
+                        still_need,
+                        self.product_id.uom_id,
+                        rounding_method="HALF-UP",
+                    )
+                    new_move_id = self._split(qty_split)
                     new_move = self.browse(new_move_id)
                     new_move.location_id = rule.fallback_location_id
                     # Shunt the caller '_action_assign' by telling that all
