@@ -184,6 +184,10 @@ class StockReserveRuleRemoval(models.Model):
     @api.depends()
     def _compute_missing_reserve_rule(self):
         for removal_rule in self:
+            removal_rule.missing_reserve_rule = False
+            # The current rule could satisfies the need already
+            if removal_rule.location_id == removal_rule.rule_id.location_id:
+                break
             rules = self.env["stock.reserve.rule"].search(
                 [
                     ("location_id", "=", removal_rule.location_id.id),
