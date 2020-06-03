@@ -436,4 +436,8 @@ class StockMove(models.Model):
             "location_dest_id": destination.id,
             "state": "waiting",
             "picking_type_id": picking_type.id,
+            # copy=False was missing on this field up to
+            # https://github.com/odoo/odoo/commit/ecf726ae8221e6871c1e391294c633d8b6bcaa9a
+            # to be on the safe side, force it to False
+            "package_level_id": False
         }
