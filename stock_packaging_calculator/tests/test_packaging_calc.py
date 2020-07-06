@@ -39,13 +39,24 @@ class TestCalc(SavepointCase):
                         "id": self.pkg_big_box.id,
                         "qty": 10,
                         "name": self.pkg_big_box.name,
+                        "is_unit": False,
                     },
                 ],
                 str(self.pkg_big_box.id): [
-                    {"id": self.pkg_box.id, "qty": 4, "name": self.pkg_box.name},
+                    {
+                        "id": self.pkg_box.id,
+                        "qty": 4,
+                        "name": self.pkg_box.name,
+                        "is_unit": False,
+                    },
                 ],
                 str(self.pkg_box.id): [
-                    {"id": self.uom_unit.id, "qty": 50, "name": self.uom_unit.name},
+                    {
+                        "id": self.uom_unit.id,
+                        "qty": 50,
+                        "name": self.uom_unit.name,
+                        "is_unit": False,
+                    },
                 ],
             },
         )
@@ -59,13 +70,24 @@ class TestCalc(SavepointCase):
                         "id": self.pkg_big_box.id,
                         "qty": 20,
                         "name": self.pkg_big_box.name,
+                        "is_unit": False,
                     },
                 ],
                 str(self.pkg_big_box.id): [
-                    {"id": self.pkg_box.id, "qty": 4, "name": self.pkg_box.name},
+                    {
+                        "id": self.pkg_box.id,
+                        "qty": 4,
+                        "name": self.pkg_box.name,
+                        "is_unit": False,
+                    },
                 ],
                 str(self.pkg_box.id): [
-                    {"id": self.uom_unit.id, "qty": 50, "name": self.uom_unit.name},
+                    {
+                        "id": self.uom_unit.id,
+                        "qty": 50,
+                        "name": self.uom_unit.name,
+                        "is_unit": False,
+                    },
                 ],
             },
         )
