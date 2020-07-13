@@ -106,6 +106,9 @@ class StockMove(models.Model):
         return {"priority": self._consolidate_priority_value}
 
     def _consolidate_priority(self):
+        self.flush(["move_dest_ids", "move_orig_ids", "picking_id"])
+        self.env["stock.picking"].flush(["picking_type_id"])
+        self.env["stock.picking.type"].flush(["consolidate_priority"])
         query, params = self._query_get_consolidate_moves()
         self.env.cr.execute(query, params)
         move_ids = [row[0] for row in self.env.cr.fetchall()]
