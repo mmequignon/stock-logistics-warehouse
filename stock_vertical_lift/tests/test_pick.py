@@ -13,7 +13,7 @@ class TestPick(VerticalLiftCase):
         )
         # we have a move line to pick created by demo picking
         # stock_picking_out_demo_vertical_lift_1
-        cls.out_move_line = cls.picking_out.move_line_ids
+        cls.out_move_line = cls.picking_out.move_line_ids[0]
 
     def test_switch_pick(self):
         self.shuttle.switch_pick()
@@ -183,7 +183,7 @@ class TestPick(VerticalLiftCase):
                 # fmt: off
                 'cells': [
                     [0, 0, 0, 0, 0, 0, 0, 0],
-                    [0, 0, 1, 0, 0, 0, 0, 0],
+                    [1, 1, 1, 0, 0, 0, 0, 0],
                 ]
                 # fmt: on
             },
