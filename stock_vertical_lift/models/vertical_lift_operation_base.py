@@ -15,24 +15,13 @@ _logger = logging.getLogger(__name__)
 # TODO: we should move them in a generic module
 
 
-def split_other_move_lines(move, move_lines, intersection=False):
+def split_other_move_lines(move, move_lines):
     """Substract `move_lines` from `move.move_line_ids`, put the result
     in a new move and returns it.
-
-    If `intersection` is set to `True`, this is the common lines between
-    `move_lines` and `move.move_line_ids` which will be put in a new move.
     """
-    if intersection:
-        other_move_lines = move.move_line_ids & move_lines
-    else:
-        other_move_lines = move.move_line_ids - move_lines
+    other_move_lines = move.move_line_ids - move_lines
     if other_move_lines or move.state == "partially_available":
-        if intersection:
-            qty_to_split = sum(other_move_lines.mapped("product_uom_qty"))
-        else:
-            qty_to_split = move.product_uom_qty - sum(
-                move_lines.mapped("product_uom_qty")
-            )
+        qty_to_split = move.product_uom_qty - sum(move_lines.mapped("product_uom_qty"))
         backorder_move_id = move._split(qty_to_split)
         backorder_move = move.browse(backorder_move_id)
         backorder_move.move_line_ids = other_move_lines
