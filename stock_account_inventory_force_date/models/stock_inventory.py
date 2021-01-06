@@ -81,7 +81,7 @@ class StockInventory(models.Model):
             for loc in locations:
                 # To improve performance, we only considered product
                 # moved in/out of the location any time in history:
-                products = self.env['stock.move'].read_group([
+                products = self.env['stock.move.line'].read_group([
                     '|',
                     ('location_id', '=', loc.id),
                     ('location_dest_id', '=', loc.id),
