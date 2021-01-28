@@ -13,7 +13,7 @@
         # OCA/queue
         "queue_job",
     ],
-    "data": [],
+    "data": ["data/queue_job_channel_data.xml", "data/queue_job_function_data.xml"],
     "demo": ["demo/stock_picking_demo.xml"],
     "installable": True,
     "development_status": "Beta",
