@@ -14,6 +14,7 @@
         "queue_job",
     ],
     "data": [],
+    "demo": ["demo/stock_picking_demo.xml"],
     "installable": True,
     "development_status": "Beta",
     "license": "AGPL-3",
