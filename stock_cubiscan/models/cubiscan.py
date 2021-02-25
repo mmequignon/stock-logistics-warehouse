@@ -13,6 +13,9 @@ class CubiscanDevice(models.Model):
     _order = "warehouse_id, name"
 
     name = fields.Char("Name", required=True)
+    driver = fields.Selection(
+        [("cubiscan", "Cubiscan")], required=True, default="cubiscan"
+    )
     device_address = fields.Char("Device IP Address", required=True)
     port = fields.Integer("Port", required=True)
     timeout = fields.Integer(
