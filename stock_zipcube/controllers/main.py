@@ -22,6 +22,15 @@ class ZipcubeController(http.Controller):
             _logger.error("wrong data format: %s", data)
             raise ValueError("the data format is incorrect")
         _logger.info("received %s", data)
+        # convert the float values passed as strings to floats
+        for key in expected_keys[1:]:
+            value = data[key]
+            if isinstance(value, str):
+                value = float(value.replace(",", "."))
+                if key != "weight":
+                    # lengths are in cm -> convert to mm
+                    value *= 10
+                data[key] = value
         cubiscan._update_packaging_measures(data)
         return True
 
@@ -29,7 +38,7 @@ class ZipcubeController(http.Controller):
 TEST_STRING = """
 curl --header "Content-Type: application/json" \
   --request POST \
-  --data '{"barcode":"xyz", "weight": 12.3, '\
-  '"length": 123, "width": 456, "height": 789}' \
-  http://localhost:8069/stock/zipcube/1/measurement
+  --data '{"barcode":"xyz", "weight": "12,3",'\
+  '"length": "123,1", "width": "456,5", "height": "789,2"}' \
+  https://integration.cosanum.odoo.camptocamp.ch/stock/zipcube/1/measurement
 """
