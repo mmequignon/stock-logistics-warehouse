@@ -85,7 +85,7 @@ class VerticalLiftOperationPick(models.Model):
     def fetch_tray(self):
         self.current_move_line_id.fetch_vertical_lift_tray_source()
 
-    def get_next_move_line(self, order):
+    def _get_next_move_line(self, order):
         def get_next(move_lines, current_move):
             if not move_lines:
                 return False
@@ -108,7 +108,7 @@ class VerticalLiftOperationPick(models.Model):
         if self._order:
             # If there already exists an order, keep it.
             next_move_line_order += "," + self._order
-        next_move_line = self.get_next_move_line(next_move_line_order)
+        next_move_line = self._get_next_move_line(next_move_line_order)
         self.current_move_line_id = next_move_line
         if next_move_line:
             if next_move_line.vertical_lift_skipped:
