@@ -86,14 +86,14 @@ class VerticalLiftOperationPick(models.Model):
         self.current_move_line_id.fetch_vertical_lift_tray_source()
 
     def _get_next_move_line(self, order):
-        def get_next(move_lines, current_move):
+        def get_next(move_lines, current_move_line):
             if not move_lines:
                 return False
             move_lines_cycle = cycle(move_lines)
-            if not current_move:
+            if not current_move_line:
                 return next(move_lines_cycle)
-            # Point to current_move and then return the next
-            while next(move_lines_cycle) != current_move:
+            # Point to current_move_line and then return the next
+            while next(move_lines_cycle) != current_move_line:
                 continue
             return next(move_lines_cycle)
 
