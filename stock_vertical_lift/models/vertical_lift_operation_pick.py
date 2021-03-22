@@ -90,7 +90,7 @@ class VerticalLiftOperationPick(models.Model):
             if not move_lines:
                 return False
             move_lines_cycle = cycle(move_lines)
-            if not current_move_line:
+            if not current_move_line or current_move_line not in move_lines:
                 return next(move_lines_cycle)
             # Point to current_move_line and then return the next
             while next(move_lines_cycle) != current_move_line:
