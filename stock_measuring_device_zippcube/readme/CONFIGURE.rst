@@ -1,4 +1,1 @@
-The first step is to configure the Packaging Types (Pallet, Box, ...)
-in Inventory > Configuration > Product Packaging Types.
-
-Configure the Zippcube device in Inventory > Configuration > Zippcube Devices.
+Create a measuring device with a type set to "zippcube".
