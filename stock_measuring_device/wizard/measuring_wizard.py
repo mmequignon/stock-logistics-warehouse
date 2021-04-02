@@ -13,10 +13,10 @@ class MeasuringWizard(models.TransientModel):
     line_ids = fields.One2many("measuring.wizard.line", "wizard_id")
     device_id = fields.Many2one("measuring.device", readonly=True)
 
-    @api.model
-    def _select_device_id(self):
-        """Retrieve available specific devices"""
-        return []
+    # @api.model
+    # def _select_device_id(self):
+    #     """Retrieve available specific devices"""
+    #     return []
 
     @api.onchange("product_id")
     def onchange_product_id(self):

@@ -3,8 +3,10 @@
 import logging
 import os
 
+from werkzeug import exceptions
+
 from odoo import _, http
-from odoo.exceptions import AccessError, MissingError
+from odoo.exceptions import AccessError, MissingError, UserError
 from odoo.http import request
 
 _logger = logging.getLogger(__name__)
@@ -27,18 +29,19 @@ class ZippcubeController(http.Controller):
         _logger.info("/measurement, data received: {}".format(data))
 
         env = request.env(su=True)
-        zippcube = env["zippcube.device"].search(
-            [("name", "=", zippcube_device_name)], limit=1
+        device = env["measuring.device"].search(
+            [("name", "=", zippcube_device_name), ("device_type", "=", "zippcube")],
+            limit=1,
         )
-        if not zippcube:
+        if not device:
             raise MissingError(
-                _("No such Zippcube with name {}.".format(zippcube_device_name))
+                _("No such Zippcube with name {}.").format(zippcube_device_name)
             )
 
         keys_missing = set(self.expected_keys) - set(data)
         if keys_missing:
-            error_msg = _(
-                "Wrong data format: {}. Keys missing: {}.".format(data, keys_missing)
+            error_msg = _("Wrong data format: {}. Keys missing: {}.").format(
+                data, keys_missing
             )
             _logger.error(error_msg)
             raise ValueError(error_msg)
@@ -46,7 +49,13 @@ class ZippcubeController(http.Controller):
         self._check_secret(data["secret"])
         # convert the float values passed as strings to floats
         data = self._convert_floats(data)
-        zippcube._update_packaging_measures(data)
+        with device.work_on(device._name) as work:
+            zippcube = work.component(usage=device.device_type)
+            try:
+                zippcube._update_packaging_measures(data)
+            except UserError as exc:
+                _logger.exception("Error updating packaging measures")
+                return exceptions.UnprocessableEntity(exc.name)
         return True
 
     def _convert_floats(self, data):
@@ -67,4 +76,4 @@ class ZippcubeController(http.Controller):
         if secret and secret == self._device_get_secret():
             return True
         else:
-            raise AccessError()
+            return AccessError()

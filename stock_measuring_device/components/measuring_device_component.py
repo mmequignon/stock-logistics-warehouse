@@ -43,10 +43,10 @@ class MeasuringDevice(AbstractComponent):
     def _validate_packaging(self, packaging):
         if len(packaging) == 0:
             error_msg = _(
-                "No package found pending a scan by this device {}. "
-                "This could mean the selected product does not have this "
-                "kind of package set.".format(self.collection.name)
-            )
+                "No package found pending a scan by this device ({}). "
+                "This could mean that the selected product does not have this "
+                "kind of package set."
+            ).format(self.collection.name)
             _logger.error(error_msg)
             raise UserError(error_msg)
 

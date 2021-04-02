@@ -8,7 +8,7 @@
     "category": "Warehouse",
     "author": "Camptocamp, Odoo Community Association (OCA)",
     "license": "AGPL-3",
-    "depends": ["stock_measuring_device"],
+    "depends": ["stock_measuring_device", "web_notify"],
     "data": [],
     "website": "https://github.com/OCA/stock-logistics-warehouse",
     "installable": True,

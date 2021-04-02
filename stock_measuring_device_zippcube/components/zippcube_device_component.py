@@ -18,7 +18,7 @@ class ZippcubeDevice(Component):
     def _update_packaging_measures(self, measures):
         self.collection.ensure_one()
         packaging = self.env["product.packaging"].search(
-            [("zippcube_device_id", "=", self.collection.id)], order="write_date DESC"
+            [("measuring_device_id", "=", self.collection.id)], order="write_date DESC"
         )
         self._validate_packaging(packaging)
         packaging_to_update = packaging[0]
@@ -30,11 +30,7 @@ class ZippcubeDevice(Component):
         wizard_line = self.collection.env["measuring.wizard.line"].search(
             [
                 ("packaging_id", "=", packaging_to_update.id),
-                (
-                    "wizard_id.device_id",
-                    "=",
-                    "zippcube.device,{}".format(self.collection.id),
-                ),
+                ("wizard_id.device_id", "=", self.collection.id),
                 ("scan_requested", "=", True),
             ],
             order="write_date DESC",
