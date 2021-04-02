@@ -13,4 +13,5 @@
     "website": "https://github.com/OCA/stock-logistics-warehouse",
     "installable": True,
     "development_status": "Alpha",
+    "maintainers": ["gurneyalex"],
 }
