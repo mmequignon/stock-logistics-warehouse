@@ -55,7 +55,6 @@ class MeasuringWizardLine(models.TransientModel):
         if success:
             self.scan_requested = True
             device = self.wizard_id.device_id
-            self.env["product.packaging"]._acquire_measuring_device()
             self.packaging_id._assign_measuring_device(device)
         return success
 
